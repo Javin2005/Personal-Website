@@ -8,3 +8,16 @@ export interface Project {
   category?: string;
   difficulty: number;
 }
+export interface SocialLink {
+  platform: string;
+  url: string;
+}
+
+export interface About {
+  name: string;
+  title: string;
+  bio: string;
+  profile_pic: string;
+  skills: string[];
+  socials: SocialLink[];
+}

@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import ProjectCard from "./components/ProjectCard";
-import type { Project } from "./types";
+import AboutSection from "./components/AboutSection";
+import type { Project, About } from "./types";
 
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [about, setAbout] = useState<About | null>(null);
 
   useEffect(() => {
     fetch("http://localhost:8000/api/projects")
@@ -13,6 +15,11 @@ function App() {
         setProjects(data);
       })
       .catch((err) => console.error("Could not get project:", err));
+
+    fetch("http://localhost:8000/api/about")
+      .then((res) => res.json())
+      .then((data) => setAbout(data))
+      .catch((err) => console.error("Could not About data:", err));
   }, []);
 
   return (
@@ -32,9 +39,17 @@ function App() {
         </p>
       </section>
 
+      {about ? (
+        <AboutSection about={about} />
+      ) : (
+        <div className="mx-w-6xl mx-auto py-20 px-6 text-slate-500 italic">
+          loading profile...
+        </div>
+      )}
+
       <section id="projects" className="max-w-6xl mx-auto py-20 px-6">
         <h2 className="text-3xl font-bold text-white mb-12 flex items-center gap-4">
-          <span className="text-cyan-500 font-mono text-xl">01.</span>
+          <span className="text-cyan-500 font-mono text-xl">02.</span>
           Project
           <div className="h-px bg-slate-800 grow"></div>
         </h2>
