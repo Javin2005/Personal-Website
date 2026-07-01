@@ -1,15 +1,54 @@
+import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
+import ProjectCard from "./components/ProjectCard";
+import type { Project } from "./types";
 
 function App() {
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    fetch("https://localhost:8000/api/projects")
+      .then((res) => res.json())
+      .then((data) => {
+        setProjects(data);
+      })
+      .catch((err) => console.error("Could not get project:", err));
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-slate-950 scroll-smooth">
       <Navbar />
-      <div className="flex flex-col items-center justify-center gap-2 h-[calc(100vh-4rem) pb-24] ">
-        <h1 className="font-serif text-4xl text-cyan-500 font-bold:">
-          Javin Carlson
+
+      <section className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+        <h1
+          className="text-6xl md:text-7xl font-extrabold text-transparent 
+        bg-clip-text bg-linear-to-r from-cyan-400 to-blue-600 mb-6 font-serif"
+        >
+          Christian J Carlson
         </h1>
-        <h2 className="text-xl text-red-400"> Hello and Welcome!</h2>
-      </div>
+        <p className="text-xl text-slate-400 mx-w-2xl">
+          Third year cs student in Facutly of Engineering at Lund | Fullstack
+          developer
+        </p>
+      </section>
+
+      <section id="projects" className="max-w-6xl mx-auto py-20 px-6">
+        <h2 className="text-3xl font-bold text-white mb-12 flex items-center gap-4">
+          <span className="text-cyan-500 font-mono text-xl">01.</span>
+          Project
+          <div className="h-px bg-slate-800 grow"></div>
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {projects.length > 0 ? (
+            projects.map((project) => (
+              <ProjectCard key={project.id} {...project} />
+            ))
+          ) : (
+            <p className="text-slate-500 italic"> loading projects...</p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
