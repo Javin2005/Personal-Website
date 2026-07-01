@@ -10,6 +10,15 @@
         { "platform": "LinkedIn", "url": "https://www.linkedin.com/in/christian-j-carlson" }
         ]
     },
+    "creative": [
+    {
+      "id": 1,
+      "title": "Black Hole Accretion Disk",
+      "description": "General relativity ray-tracer implemented in C++. Simulates light bending around a Schwarzschild black hole.",
+      "tech": "C++ / GLSL",
+      "video_path": "/assets/blackhole_preview.mp4"
+    }
+    ],
     "projects": [
         {
             "id": 1,

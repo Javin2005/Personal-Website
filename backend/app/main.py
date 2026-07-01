@@ -1,7 +1,7 @@
 from fastapi import FastAPI 
 from fastapi.middleware.cors import CORSMiddleware
 
-from .schemas import Project, AboutMe
+from .schemas import Project, AboutMe, CreativeItem
 
 from typing import List
 import json
@@ -40,3 +40,6 @@ def get_projects(language: str = None):
 def get_about():
     data = load_data()
     return data["about"]
+@app.get("/api/creative", response_model=List[CreativeItem])
+def get_creative():
+    return load_data()["Creative"]
