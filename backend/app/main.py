@@ -1,7 +1,8 @@
 from fastapi import FastAPI 
 from fastapi.middleware.cors import CORSMiddleware
 
-from .schemas import Project
+from .schemas import Project, AboutMe
+
 from typing import List
 import json
 
@@ -35,3 +36,7 @@ def get_projects(language: str = None):
         return [p for p in data if language in p["tech_stack"]]
     
     return data
+@app.get("/api/about", response_model=AboutMe)
+def get_about():
+    data = load_data()
+    return data["about"]

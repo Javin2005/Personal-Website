@@ -1,11 +1,22 @@
 {
+    "about": {
+        "name": "Christian J Carlson",
+        "title": "Third Year CS Student & Fullstack Developer",
+        "bio": "I'm a computer science student at Lund University with a passion for coding cool stuff. I love exploring the intersection of physics and code, as seen in my black hole rendering projects.",
+        "profile_pic": "/assets/profile.jpg",
+        "skills": ["React", "FastAPI", "Python", "TypeScript", "Tailwind CSS", "c++", "Java", "Scala", "Haskell"],
+        "socials": [
+        { "platform": "GitHub", "url": "https://github.com/Javin2005" },
+        { "platform": "LinkedIn", "url": "https://www.linkedin.com/in/christian-j-carlson" }
+        ]
+    },
     "projects": [
         {
             "id": 1,
             "title": "My website",
             "description": "A full stack project that shows my portfolio.",
             "tech_stack": ["FastAPI", "Python", "React","Typescript"],
-            "github_url": "https://github.com/Javin2005/https://github.com/Javin2005/Personal-Website",
+            "github_url": "https://github.com/Javin2005/Personal-Website",
             "featured": true,
             "category": "Webb development",
             "difficulty": 5
