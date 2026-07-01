@@ -30,7 +30,7 @@ async def read_root():
 
 @app.get("/api/projects", response_model = List[Project])
 def get_projects(language: str = None):
-    data = load_data()["projecta"]
+    data = load_data()["projects"]
     if language:
         return [p for p in data if language in p["tech_stack"]]
     
