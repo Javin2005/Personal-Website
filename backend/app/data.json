@@ -1,0 +1,34 @@
+{
+    "projects": [
+        {
+            "id": 1,
+            "title": "My website",
+            "description": "A full stack project that shows my portfolio.",
+            "tech_stack": ["FastAPI", "Python", "React","Typescript"],
+            "github_url": "https://github.com/Javin2005/https://github.com/Javin2005/Personal-Website",
+            "featured": true,
+            "category": "Webb development",
+            "difficulty": 5
+
+        },
+        {
+            "id": 2,
+            "title": "BlackHole",
+            "description": "Trying to simulate a black hole through c",
+            "tech_stack": ["C++"],
+            "github_url": "https://github.com/Javin2005/BLACKED_hole",
+            "featured": true,
+            "category": "Rendering",
+            "difficulty": 5
+
+        }
+
+    ]
+
+
+
+
+
+
+
+}
