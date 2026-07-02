@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { NavHashLink } from "react-router-hash-link";
 import logo from "../assets/cjc.svg";
 
 function Navbar() {
@@ -8,22 +8,24 @@ function Navbar() {
       top-4 z-50 backdrop-blur-md bg-slate-900/60 border-2
        border-slate-400/50 rounded-2xl px-8 hover:border-cyan-500/50 group transition-colors"
     >
-      <Link to="/" className="flex items-center h-full py-2">
+      <NavHashLink to="/" className="flex items-center h-full py-2">
         <img src={logo} alt="logo" className="h-full w-auto" />
-      </Link>
+      </NavHashLink>
 
       <ul className="flex gap-6 text-cyan-500 font-bold">
         <li>
-          <Link to="/archive">Projects</Link>
+          <NavHashLink to="/archive">Projects</NavHashLink>
         </li>
         <li>
-          <Link to="/#about">About</Link>
+          <NavHashLink smooth to="/#about">
+            About
+          </NavHashLink>
         </li>
         <li>
-          <Link to="/Life">Life</Link>
+          <NavHashLink to="/Life">Life</NavHashLink>
         </li>
         <li>
-          <Link to="/Contact">Contact</Link>
+          <NavHashLink to="/#contact">Contact</NavHashLink>
         </li>
       </ul>
     </nav>
