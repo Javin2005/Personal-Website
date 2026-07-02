@@ -46,7 +46,7 @@ function Home() {
         <div className="relative z-10">
           <h1
             className="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-cyan-400
-            to-blue-600 mb-6 font-serif tracking-tighter"
+            via-blue-500 to-blue-600 mb-6 font-serif tracking-tighter animate-gradient"
           >
             Christian J Carlson
           </h1>
