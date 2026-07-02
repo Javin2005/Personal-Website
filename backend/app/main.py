@@ -6,7 +6,7 @@ from typing import List
 
 
 from .database import create_db_and_tables, get_session
-from .models import Project, About, CreativeItem
+from .models import Project, About, CreativeItem, ContactForm
 
 
 
@@ -26,7 +26,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 
 @app.get("/")
@@ -62,3 +61,9 @@ def get_creative(session: Session = Depends(get_session)):
     return items
 
 
+@app.post("/api/contact")
+async def handle_contact(form_data: ContactForm):
+    print(f"NEW MESSAGE FROM {form_data.name} ({form_data.email}):")
+    print(f"MESSAGE: {form_data.message}")
+
+    return {"status": "success", "message": "I received your message, Christian!"}

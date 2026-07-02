@@ -1,5 +1,11 @@
 from sqlmodel import SQLModel, Field, JSON, Column
 from typing import List, Optional
+from pydantic import BaseModel, EmailStr
+
+class ContactForm(BaseModel):
+    name: str
+    email: EmailStr
+    message:str
 
 class SocialLink(SQLModel):
     platform: str
