@@ -25,7 +25,9 @@ function Navbar() {
           <NavHashLink to="/Life">Life</NavHashLink>
         </li>
         <li>
-          <NavHashLink to="/#contact">Contact</NavHashLink>
+          <NavHashLink smooth to="/#contact">
+            Contact
+          </NavHashLink>
         </li>
       </ul>
     </nav>
