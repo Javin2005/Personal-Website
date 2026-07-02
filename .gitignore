@@ -28,3 +28,6 @@ frontend/.env.local
 
 # --- Docker ---
 .docker/
+
+__pycache__/
+*.py[cod]
