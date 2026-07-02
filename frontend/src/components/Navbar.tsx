@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import logo from "../assets/cjc.svg";
 
 function Navbar() {
@@ -7,19 +8,22 @@ function Navbar() {
       top-4 z-50 backdrop-blur-md bg-slate-900/60 border-2
        border-slate-400/50 rounded-2xl px-8 hover:border-cyan-500/50 group transition-colors"
     >
-      <a href="#" className="flex items-center h-full py-2">
+      <Link to="/" className="flex items-center h-full py-2">
         <img src={logo} alt="logo" className="h-full w-auto" />
-      </a>
+      </Link>
 
       <ul className="flex gap-6 text-cyan-500 font-bold">
         <li>
-          <a href="#about">About</a>
+          <Link to="/archive">Projects</Link>
         </li>
         <li>
-          <a href="#projects">Projects</a>
+          <Link to="/#about">About</Link>
         </li>
         <li>
-          <a href="#contact">Contact</a>
+          <Link to="/Life">Life</Link>
+        </li>
+        <li>
+          <Link to="/Contact">Contact</Link>
         </li>
       </ul>
     </nav>
