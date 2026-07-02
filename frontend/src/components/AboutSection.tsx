@@ -14,7 +14,7 @@ function AboutSection({ about }: { about: About }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
         <div className="relative group mx-auto md:mx-0">
           <div
-            className="absolute -insect-1 bg-linear-to-r from-cyan-500 to-blue-600 rounded-2xl blur opacity-25 
+            className="absolute -inset-1 bg-linear-to-r from-cyan-500 to-blue-600 rounded-2xl blur opacity-25 
                     group-hover:opacity-50 transition duration-1000"
           ></div>
           <img

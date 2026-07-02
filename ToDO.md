@@ -1,25 +1,40 @@
-### 3. Action Plan (The Road Map)
 
-Now that the skeletons are built, follow this order to ensure you don't get overwhelmed.
+## Phase 1: Architecture & Navigation
+- [ ] **Install React Router**: `npm install react-router-dom` in the frontend.
+- [ ] **Define Routes**:
+    - `/` -> Main Portfolio (The "Professional" side).
+    - `/archive` -> Full list of all projects (The "Code" side).
+    - `/life` -> Scrapbook/Gallery (The "Human" side).
+    - `/login` -> Admin Entry.
+- [ ] **Refactor App.tsx**: Move current content into a `pages/Home.tsx` component and setup `<Routes>`.
 
-#### Phase 1: The "Hello World" Bridge (Week 1)
-*   **Backend:** Write a simple `@app.get("/")` route in `main.py` that returns `{"message": "Hello from FastAPI"}`.
-*   **Frontend:** Use the `useEffect` hook and `fetch()` in React to call that endpoint and display the text on the screen.
-*   **Crucial Step:** You will hit a **CORS error**. Don't use AI—read the [FastAPI Middleware Docs](https://fastapi.tiangolo.com/tutorial/cors/) to learn how to fix it.
+## Phase 2: Backend Evolution (JSON to SQL)
+- [ ] **Install SQLModel**: `pip install sqlmodel` (A better way to use SQLAlchemy with FastAPI).
+- [ ] **Define Models**: Create DB tables for `Project`, `About`, `CreativeItem`, and `LifePost`.
+- [ ] **Migration Script**: Write a small Python script to read `data.json` and seed the SQLite database.
+- [ ] **Update Endpoints**: Switch the FastAPI routes to query the database instead of reading the JSON file.
 
-#### Phase 2: The Data Schema (Week 2)
-*   Define what a "Project" looks like. Create a **Pydantic Model** in the backend and a matching **TypeScript Interface** in the frontend. 
-*   *Why?* This ensures that if you change a field name in Python, you know exactly what to change in TS. This is the "Object Oriented Modeling" part of your degree in practice.
+## Phase 3: Security & Admin Dashboard
+- [ ] **Authentication**: Implement JWT (JSON Web Tokens) in FastAPI.
+- [ ] **Admin Page**: Create a simple dashboard at `/admin` (protected by login).
+- [ ] **CRUD Operations**: Build forms to:
+    - Add/Edit/Delete projects.
+    - Upload "Life" photos (using FastAPI `UploadFile`).
+- [ ] **Storage**: Configure a folder or a service (like Cloudinary) to store uploaded images.
 
-#### Phase 3: The Content Strategy (Week 3)
-*   Decide how to store your data.
-    *   **Level 1 (Easy):** A hardcoded JSON file in the backend.
-    *   **Level 2 (Better):** Markdown files in a folder that the backend parses (great for blog posts).
-    *   **Level 3 (Professional):** A PostgreSQL database (using **SQLAlchemy** or **SQLModel**).
+## Phase 4: The "Proof of Life" Status Bar
+- [ ] **GitHub Integration**:
+    - Backend: Fetch latest events from `api.github.com/users/Javin2005/events`.
+    - Frontend: Add a "Last pushed to..." ticker in the Navbar.
+- [ ] **Spotify Integration**:
+    - Backend: Register Spotify App, handle OAuth `refresh_token`.
+    - Frontend: "Now Playing" or "Last Listened" status.
+- [ ] **Email System**: Integrate [Resend](https://resend.com/) in the backend for the Contact Form `POST` request.
 
-#### Phase 4: Refinement & Polish
-*   **Theming:** Implement Dark/Light mode using Tailwind.
-*   **Deployment:** Use **Docker** to containerize both. This is a skill very highly valued in Swedish tech companies like Ericsson, Axis, or startups in Malmö/Lund.
+## Phase 5: Visual Polish (The Anti-AI Look)
+- [ ] **Bespoke Layouts**: Design the `/life` page as a "Bento Grid" (irregular sizes).
+- [ ] **Texture Overlay**: Add a global SVG "noise/grain" filter to the background.
+- [ ] **Framer Motion**: Add "AnimatePresence" for smooth transitions between pages.
+- [ ] **Custom Cursor**: Build a custom React cursor that changes color based on the section.
 
-### Pro-Tip for an LTH Student:
-When you write your "About Me" or "Project Description," write it like a **Technical Report**. Mention the trade-offs you made. For example: *"I chose FastAPI over Flask because of native asynchronous support and Pydantic validation, which reduced my boilerplate code by 30%."* This proves you aren't just a coder, but an engineer.
+---

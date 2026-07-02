@@ -3,6 +3,8 @@ import Navbar from "./components/Navbar";
 import ProjectCard from "./components/ProjectCard";
 import AboutSection from "./components/AboutSection";
 import CreativeCard from "./components/CreativeCard";
+import Contact from "./components/Contact";
+import Footer from "./components/Footer";
 import type { Project, About, CreativeItem } from "./types";
 
 function App() {
@@ -30,7 +32,7 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 scroll-smooth">
+    <div className="min-h-screen bg-slate-950">
       <Navbar />
 
       <section className="relative flex flex-col items-center justify-center min-h-[85vh] text-center px-4 overflow-hidden">
@@ -63,7 +65,7 @@ function App() {
       {about ? (
         <AboutSection about={about} />
       ) : (
-        <div className="mx-w-6xl mx-auto py-20 px-6 text-slate-500 italic">
+        <div className="max-w-6xl mx-auto py-20 px-6 text-slate-500 italic">
           loading profile...
         </div>
       )}
@@ -98,6 +100,8 @@ function App() {
           ))}
         </div>
       </section>
+      <Contact />
+      <Footer />
     </div>
   );
 }
