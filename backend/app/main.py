@@ -8,6 +8,12 @@ from typing import List
 from .database import create_db_and_tables, get_session
 from .models import Project, About, CreativeItem, ContactForm
 
+import os
+import resend
+from dotenv import load_dotenv
+
+load_dotenv()
+resend.api_key = os.getenv("RESEND_API_KEY")
 
 
 @asynccontextmanager
@@ -63,7 +69,20 @@ def get_creative(session: Session = Depends(get_session)):
 
 @app.post("/api/contact")
 async def handle_contact(form_data: ContactForm):
-    print(f"NEW MESSAGE FROM {form_data.name} ({form_data.email}):")
-    print(f"MESSAGE: {form_data.message}")
+    try:
+        email = resend.Emails.send({
+            "from": "onboarding@resend.dev",
+            "to": "christiancarlsonwork@gmail.com",
+            "subject": f"New Message from {form_data.name}",
+            "html": f"""
+                <h3>New Portfolio Message</h3>
+                <p><strong>From:</strong> {form_data.name} ({form_data.email})</p>
+                <p><strong>Message:</strong></p>
+                <p>{form_data.message}</p>
+            """,
+        })
+        return {"status": "success", "id": email["id"]}
 
-    return {"status": "success", "message": "I received your message, Christian!"}
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

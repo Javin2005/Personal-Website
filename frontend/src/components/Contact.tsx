@@ -11,21 +11,21 @@ function Contact() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus("Sending...");
+    setStatus("sending...");
 
     try {
-      const response = await fetch("http:/localhost:8000/api/contact", {
+      const response = await fetch("http://localhost:8000/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        setStatus("Message sent succssfully!");
+        setStatus("success");
         setFormData({ name: "", email: "", message: "" });
       }
     } catch (err) {
-      setStatus("Error sending message.");
+      setStatus("error");
     }
   };
 
