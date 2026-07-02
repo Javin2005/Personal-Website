@@ -1,4 +1,4 @@
-import { NavHashLink } from "react-router-hash-link";
+import { HashLink } from "react-router-hash-link";
 import logo from "../assets/cjc.svg";
 
 function Navbar() {
@@ -8,26 +8,26 @@ function Navbar() {
       top-4 z-50 backdrop-blur-md bg-slate-900/60 border-2
        border-slate-400/50 rounded-2xl px-8 hover:border-cyan-500/50 group transition-colors"
     >
-      <NavHashLink to="/" className="flex items-center h-full py-2">
+      <HashLink to="/" className="flex items-center h-full py-2">
         <img src={logo} alt="logo" className="h-full w-auto" />
-      </NavHashLink>
+      </HashLink>
 
       <ul className="flex gap-6 text-cyan-500 font-bold">
         <li>
-          <NavHashLink to="/archive">Projects</NavHashLink>
+          <HashLink to="/archive">Projects</HashLink>
         </li>
         <li>
-          <NavHashLink smooth to="/#about">
+          <HashLink smooth to="/#about">
             About
-          </NavHashLink>
+          </HashLink>
         </li>
         <li>
-          <NavHashLink to="/Life">Life</NavHashLink>
+          <HashLink to="/Life">Life</HashLink>
         </li>
         <li>
-          <NavHashLink smooth to="/#contact">
+          <HashLink smooth to="/#contact">
             Contact
-          </NavHashLink>
+          </HashLink>
         </li>
       </ul>
     </nav>
