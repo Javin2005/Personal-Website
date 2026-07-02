@@ -12,7 +12,7 @@
 - [x] **Install SQLModel**: `pip install sqlmodel` (A better way to use SQLAlchemy with FastAPI).
 - [x] **Define Models**: Create DB tables for `Project`, `About`, `CreativeItem`, and `LifePost`.
 - [x] **Migration Script**: Write a small Python script to read `data.json` and seed the SQLite database.
-- [ ] **Update Endpoints**: Switch the FastAPI routes to query the database instead of reading the JSON file.
+- [x] **Update Endpoints**: Switch the FastAPI routes to query the database instead of reading the JSON file.
 
 ## Phase 3: Security & Admin Dashboard
 - [ ] **Authentication**: Implement JWT (JSON Web Tokens) in FastAPI.

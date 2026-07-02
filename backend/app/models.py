@@ -1,6 +1,9 @@
 from sqlmodel import SQLModel, Field, JSON, Column
 from typing import List, Optional
 
+class SocialLink(SQLModel):
+    platform: str
+    url: str
 
 class Project(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -19,6 +22,7 @@ class About(SQLModel, table=True):
     bio: str
     profile_pic: str
     skills: List[str] = Field(default=[], sa_column=Column(JSON))
+    socials: List[dict] = Field(default=[], sa_column=Column(JSON))
 
 class CreativeItem(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -26,4 +30,3 @@ class CreativeItem(SQLModel, table=True):
     description: str
     tech: str
     video_path: str
-    

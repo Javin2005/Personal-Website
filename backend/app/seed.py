@@ -26,8 +26,9 @@ def migrate_data():
             title=about_data["title"],
             bio=about_data["bio"],
             profile_pic=about_data["profile_pic"],
-            skills=about_data["skills"]
-        )
+            skills=about_data["skills"],
+            socials=about_data["socials"]
+            )
         session.add(db_about)
 
 

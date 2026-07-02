@@ -12,7 +12,7 @@ function Home() {
   const [creative, setCreative] = useState<CreativeItem[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/projects")
+    fetch("http://localhost:8000/api/projects/featured")
       .then((res) => res.json())
       .then((data) => {
         setProjects(data);
