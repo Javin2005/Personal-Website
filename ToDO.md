@@ -1,17 +1,17 @@
 
 ## Phase 1: Architecture & Navigation
-- [ ] **Install React Router**: `npm install react-router-dom` in the frontend.
-- [ ] **Define Routes**:
+- [x] **Install React Router**: `npm install react-router-dom` in the frontend.
+- [x] **Define Routes**:
     - `/` -> Main Portfolio (The "Professional" side).
     - `/archive` -> Full list of all projects (The "Code" side).
     - `/life` -> Scrapbook/Gallery (The "Human" side).
     - `/login` -> Admin Entry.
-- [ ] **Refactor App.tsx**: Move current content into a `pages/Home.tsx` component and setup `<Routes>`.
+- [x] **Refactor App.tsx**: Move current content into a `pages/Home.tsx` component and setup `<Routes>`.
 
 ## Phase 2: Backend Evolution (JSON to SQL)
-- [ ] **Install SQLModel**: `pip install sqlmodel` (A better way to use SQLAlchemy with FastAPI).
-- [ ] **Define Models**: Create DB tables for `Project`, `About`, `CreativeItem`, and `LifePost`.
-- [ ] **Migration Script**: Write a small Python script to read `data.json` and seed the SQLite database.
+- [x] **Install SQLModel**: `pip install sqlmodel` (A better way to use SQLAlchemy with FastAPI).
+- [x] **Define Models**: Create DB tables for `Project`, `About`, `CreativeItem`, and `LifePost`.
+- [x] **Migration Script**: Write a small Python script to read `data.json` and seed the SQLite database.
 - [ ] **Update Endpoints**: Switch the FastAPI routes to query the database instead of reading the JSON file.
 
 ## Phase 3: Security & Admin Dashboard
