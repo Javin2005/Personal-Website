@@ -16,7 +16,7 @@
       "title": "Black Hole Accretion Disk",
       "description": "General relativity ray-tracer implemented in C++. Simulates light bending around a Schwarzschild black hole.",
       "tech": "C++ / GLSL",
-      "video_path": "/assets/blackhole_preview.mp4"
+      "video_path": "/assets/BlackHole_preview.mp4"
     }
     ],
     "projects": [

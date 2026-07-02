@@ -21,3 +21,11 @@ export interface About {
   skills: string[];
   socials: SocialLink[];
 }
+
+export interface CreativeItem {
+  id: number;
+  title: string;
+  description: string;
+  tech: string;
+  video_path: string;
+}
