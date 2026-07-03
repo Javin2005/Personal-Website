@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
+import { ShieldCheck, LogOut } from "lucide-react";
 import logo from "../assets/cjc.svg";
 
 function Navbar() {
@@ -13,50 +14,58 @@ function Navbar() {
   };
 
   return (
-    <nav
-      className="h-16 max-w-4xl mx-auto mt-4 flex justify-between items-center sticky 
-      top-4 z-50 backdrop-blur-md bg-slate-900/60 border-2
-       border-slate-400/50 rounded-2xl px-8 hover:border-cyan-500/50 group transition-colors"
-    >
-      <HashLink to="/" className="flex items-center h-full py-2">
+    <nav className="h-16 max-w-5xl mx-auto mt-4 flex justify-between items-center sticky top-4 z-50 backdrop-blur-md bg-slate-900/60 border border-slate-400/20 rounded-2xl px-8 transition-all">
+      <Link to="/" className="flex items-center h-full py-2">
         <img src={logo} alt="logo" className="h-full w-auto" />
-      </HashLink>
+      </Link>
 
-      <ul className="flex gap-6 text-cyan-500 font-bold items-center">
+      <ul className="flex gap-8 text-cyan-500 font-bold items-center">
         <li>
-          <HashLink to="/archive">Projects</HashLink>
+          <Link to="/archive" className="hover:text-white transition-colors">
+            Projects
+          </Link>
         </li>
         <li>
-          <HashLink smooth to="/#about">
+          <HashLink
+            smooth
+            to="/#about"
+            className="hover:text-white transition-colors"
+          >
             About
           </HashLink>
         </li>
         <li>
-          <HashLink to="/Life">Life</HashLink>
+          <Link to="/life" className="hover:text-white transition-colors">
+            Life
+          </Link>
         </li>
-        {isLoggedIn ? (
-          <li>
-            <button
-              onClick={handleLogout}
-              className="text-xs bg-red-500/10 text-red-500 border
-            border-red-500/20 px-2 py-1 rounded hover:bg-red-500 
-            hover:text-white transition-all"
-            >
-              Logout
-            </button>
-          </li>
-        ) : (
-          <li className="opacity-0 hover:opacity-100 transition-opacity">
-            <Link to="/login" className="text-[10px text-slate-700">
-              Admin
-            </Link>
-          </li>
-        )}
         <li>
-          <HashLink smooth to="/#contact">
+          <HashLink
+            smooth
+            to="/#contact"
+            className="hover:text-white transition-colors"
+          >
             Contact
           </HashLink>
         </li>
+
+        {isLoggedIn ? (
+          <li className="pl-4 border-l border-slate-700">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-[10px] uppercase tracking-tighter text-red-400 hover:text-red-300 transition-colors"
+            >
+              <LogOut size={14} />
+              Sign Out
+            </button>
+          </li>
+        ) : (
+          <li className="pl-4 border-l border-slate-700 opacity-20 hover:opacity-100 transition-opacity">
+            <Link to="/login" className="text-slate-500 hover:text-cyan-400">
+              <ShieldCheck size={18} />
+            </Link>
+          </li>
+        )}
       </ul>
     </nav>
   );
