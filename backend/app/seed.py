@@ -1,7 +1,7 @@
 import os
 import json
 from sqlmodel import Session, create_engine, SQLModel
-from .models import Project, About, CreativeItem, User
+from .models import Project, About, CreativeItem, User, LifePost
 from .auth import get_password_hash
 from dotenv import load_dotenv
 
@@ -72,6 +72,21 @@ def migrate_data():
         else:
             print("WARNING: Admin credentials not found in .env!")
 
+        print("Migrating Life Posts...")
+        test_posts = [
+            {"title": "Morning Coffee", "caption": "Lund feels cozy today.", "category": "Life", "image_url": "https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800"},
+            {"title": "C++ Debugging", "caption": "The black hole is finally rendering.", "category": "Code", "image_url": "https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=800"}
+        ]
+        
+        for p in test_posts:
+            # Explicitly map the fields to avoid the "id" type error
+            db_post = LifePost(
+                title=p["title"],
+                caption=p["caption"],
+                category=p["category"],
+                image_url=p["image_url"]
+            )
+            session.add(db_post)
 
         session.commit() 
         print("Migration complete! 'database.db' has been created and saved.")

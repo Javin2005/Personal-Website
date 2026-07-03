@@ -29,3 +29,12 @@ export interface CreativeItem {
   tech: string;
   video_path: string;
 }
+
+export interface LifePost {
+  id: number;
+  title: string;
+  caption: string;
+  image_url: string;
+  category: string;
+  created_at: string;
+}
