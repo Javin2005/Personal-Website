@@ -23,13 +23,13 @@
 - [ ] **Storage**: Configure a folder or a service (like Cloudinary) to store uploaded images.
 
 ## Phase 4: The "Proof of Life" Status Bar
-- [ ] **GitHub Integration**:
+- [x] **GitHub Integration**:
     - Backend: Fetch latest events from `api.github.com/users/Javin2005/events`.
     - Frontend: Add a "Last pushed to..." ticker in the Navbar.
 - [ ] **Spotify Integration**:
     - Backend: Register Spotify App, handle OAuth `refresh_token`.
     - Frontend: "Now Playing" or "Last Listened" status.
-- [ ] **Email System**: Integrate [Resend](https://resend.com/) in the backend for the Contact Form `POST` request.
+- [x] **Email System**: Integrate [Resend](https://resend.com/) in the backend for the Contact Form `POST` request.
 
 ## Phase 5: Visual Polish
 - [x] **Bespoke Layouts**: Design the `/life` page as a "Bento Grid" (irregular sizes).

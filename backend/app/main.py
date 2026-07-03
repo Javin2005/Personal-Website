@@ -122,24 +122,45 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Sessi
 @app.get("/api/status/github")
 async def get_github_status():
     username = "Javin2005"
-    url = f"https://api.github.com/users/{username}/events/public"
+    url = f"https://api.github.com/users/{username}/events"
+    
+    token = os.getenv("GITHUB_TOKEN")
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"token {token}"
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(url)
-            events = response.json()
+            response = await client.get(url, headers=headers)
+            if response.status_code != 200:
+                return {"active": False}
 
-            push_event = next((e for e in events if e["type"] == "PushEvent"), None)
+            events = response.json()
+            if not isinstance(events, list):
+                return {"active": False}
+
+
+            push_event = next((e for e in events if e.get("type") == "PushEvent"), None)
 
             if push_event:
-                repo_name = push_event["repo"] ["name"].split("/") [-1]
-                commit_msg = push_event["payload"] ["commits"] [10] ["message"]
+                repo_full_name = push_event.get("repo", {}).get("name", "unknown/repo")
+                repo_name = repo_full_name.split("/")[-1]
+                
+                payload = push_event.get("payload", {})
+                commits = payload.get("commits", [])
+                
+                if commits and len(commits) > 0:
+                    commit_msg = commits[0].get("message", "Updated files")
+                else:
+                    ref = payload.get("ref", "main").split("/")[-1]
+                    commit_msg = f"Pushed to {ref}"
 
                 return {
                     "repo": repo_name,
                     "message": commit_msg,
                     "active": True
                 }
-        except Exception as e:
-            print(f"GitHub API Error: {e}")
+        except Exception:
+            pass
+            
     return {"active": False}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Image as ImageIcon, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import type { LifePost } from "../types";
 
 export default function Life() {
@@ -140,7 +140,7 @@ export default function Life() {
           <div
             key={post.id}
             className={`relative break-inside-avoid rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 group transition-all hover:border-cyan-500/50
-              ${index % 3 === 0 ? "aspect-square" : "aspect-[3/4]"}`}
+              ${index % 3 === 0 ? "aspect-square" : "aspect-3/4"}`}
           >
             <img
               src={post.image_url}

@@ -29,7 +29,7 @@ function StatusBar() {
         </div>
 
         {status ? (
-          <div className="flex items-center gap-4 animate-in fade-in slide-in-form-right duration-1000">
+          <div className="flex items-center gap-4 animate-in fade-in slide-in-from-right duration-1000">
             <div className="flex items-center gap-1.5">
               <GitBranch size={12} />
               <span>Latest_commit:</span>
