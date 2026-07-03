@@ -15,8 +15,8 @@
 - [x] **Update Endpoints**: Switch the FastAPI routes to query the database instead of reading the JSON file.
 
 ## Phase 3: Security & Admin Dashboard
-- [ ] **Authentication**: Implement JWT (JSON Web Tokens) in FastAPI.
-- [ ] **Admin Page**: Create a simple dashboard at `/admin` (protected by login).
+- [x] **Authentication**: Implement JWT (JSON Web Tokens) in FastAPI.
+- [x] **Admin Page**: Create a simple dashboard at `/admin` (protected by login).
 - [ ] **CRUD Operations**: Build forms to:
     - Add/Edit/Delete projects.
     - Upload "Life" photos (using FastAPI `UploadFile`).

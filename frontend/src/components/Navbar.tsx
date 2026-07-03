@@ -1,7 +1,17 @@
+import { Link, useNavigate } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import logo from "../assets/cjc.svg";
 
 function Navbar() {
+  const navigate = useNavigate();
+  const isLoggedIn = !!localStorage.getItem("token");
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+    window.location.reload();
+  };
+
   return (
     <nav
       className="h-16 max-w-4xl mx-auto mt-4 flex justify-between items-center sticky 
@@ -12,7 +22,7 @@ function Navbar() {
         <img src={logo} alt="logo" className="h-full w-auto" />
       </HashLink>
 
-      <ul className="flex gap-6 text-cyan-500 font-bold">
+      <ul className="flex gap-6 text-cyan-500 font-bold items-center">
         <li>
           <HashLink to="/archive">Projects</HashLink>
         </li>
@@ -24,6 +34,24 @@ function Navbar() {
         <li>
           <HashLink to="/Life">Life</HashLink>
         </li>
+        {isLoggedIn ? (
+          <li>
+            <button
+              onClick={handleLogout}
+              className="text-xs bg-red-500/10 text-red-500 border
+            border-red-500/20 px-2 py-1 rounded hover:bg-red-500 
+            hover:text-white transition-all"
+            >
+              Logout
+            </button>
+          </li>
+        ) : (
+          <li className="opacity-0 hover:opacity-100 transition-opacity">
+            <Link to="/login" className="text-[10px text-slate-700">
+              Admin
+            </Link>
+          </li>
+        )}
         <li>
           <HashLink smooth to="/#contact">
             Contact
