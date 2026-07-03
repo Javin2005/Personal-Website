@@ -31,8 +31,8 @@
     - Frontend: "Now Playing" or "Last Listened" status.
 - [ ] **Email System**: Integrate [Resend](https://resend.com/) in the backend for the Contact Form `POST` request.
 
-## Phase 5: Visual Polish (The Anti-AI Look)
-- [ ] **Bespoke Layouts**: Design the `/life` page as a "Bento Grid" (irregular sizes).
+## Phase 5: Visual Polish
+- [x] **Bespoke Layouts**: Design the `/life` page as a "Bento Grid" (irregular sizes).
 - [ ] **Texture Overlay**: Add a global SVG "noise/grain" filter to the background.
 - [ ] **Framer Motion**: Add "AnimatePresence" for smooth transitions between pages.
 - [ ] **Custom Cursor**: Build a custom React cursor that changes color based on the section.
