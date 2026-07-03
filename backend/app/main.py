@@ -12,6 +12,7 @@ from .models import Project, About, CreativeItem, ContactForm, User, LifePost
 
 import os
 import resend
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -117,3 +118,28 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Sessi
     
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/status/github")
+async def get_github_status():
+    username = "Javin2005"
+    url = f"https://api.github.com/users/{username}/events/public"
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            events = response.json()
+
+            push_event = next((e for e in events if e["type"] == "PushEvent"), None)
+
+            if push_event:
+                repo_name = push_event["repo"] ["name"].split("/") [-1]
+                commit_msg = push_event["payload"] ["commits"] [10] ["message"]
+
+                return {
+                    "repo": repo_name,
+                    "message": commit_msg,
+                    "active": True
+                }
+        except Exception as e:
+            print(f"GitHub API Error: {e}")
+    return {"active": False}
