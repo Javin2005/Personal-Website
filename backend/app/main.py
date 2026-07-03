@@ -1,15 +1,18 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, select
+from sqlmodel import Session, select, desc
 from typing import List
 
+from .auth import verify_password, create_access_token, get_password_hash, get_current_user
 
 from .database import create_db_and_tables, get_session
-from .models import Project, About, CreativeItem, ContactForm
+from .models import Project, About, CreativeItem, ContactForm, User, LifePost
 
 import os
 import resend
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -86,3 +89,78 @@ async def handle_contact(form_data: ContactForm):
     except Exception as e:
         print(f"Error sending email: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/life", response_model=List[LifePost])
+def get_life_posts(session: Session = Depends(get_session)):
+    statement = select(LifePost).order_by(desc(LifePost.created_at))
+    return session.exec(statement).all()
+
+
+@app.post("/api/life")
+def create_life_post(
+    post: LifePost,
+    session: Session = Depends(get_session),
+    current_user: str = Depends(get_current_user)
+):
+    session.add(post)
+    session.commit()
+    session.refresh(post)
+    return post
+
+@app.post("/api/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    statement = select(User).where(User.username == form_data.username)
+    user = session.exec(statement).first()
+
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/status/github")
+async def get_github_status():
+    username = "Javin2005"
+    url = f"https://api.github.com/users/{username}/events"
+    
+    token = os.getenv("GITHUB_TOKEN")
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, headers=headers)
+            if response.status_code != 200:
+                return {"active": False}
+
+            events = response.json()
+            if not isinstance(events, list):
+                return {"active": False}
+
+
+            push_event = next((e for e in events if e.get("type") == "PushEvent"), None)
+
+            if push_event:
+                repo_full_name = push_event.get("repo", {}).get("name", "unknown/repo")
+                repo_name = repo_full_name.split("/")[-1]
+                
+                payload = push_event.get("payload", {})
+                commits = payload.get("commits", [])
+                
+                if commits and len(commits) > 0:
+                    commit_msg = commits[0].get("message", "Updated files")
+                else:
+                    ref = payload.get("ref", "main").split("/")[-1]
+                    commit_msg = f"Pushed to {ref}"
+
+                return {
+                    "repo": repo_name,
+                    "message": commit_msg,
+                    "active": True
+                }
+        except Exception:
+            pass
+            
+    return {"active": False}

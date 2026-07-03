@@ -51,8 +51,7 @@ function Home() {
             Christian J Carlson
           </h1>
           <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto font-light">
-            Third year cs student at Lund | Fullstack developer | Graphics
-            Enthusiast
+            Third year cs student at Lund
           </p>
         </div>
 
