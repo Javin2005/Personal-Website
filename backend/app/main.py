@@ -1,12 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from typing import List
 
+from .auth import verify_password, create_access_token, get_password_hash
 
 from .database import create_db_and_tables, get_session
-from .models import Project, About, CreativeItem, ContactForm
+from .models import Project, About, CreativeItem, ContactForm, User
 
 import os
 import resend
@@ -86,3 +88,15 @@ async def handle_contact(form_data: ContactForm):
     except Exception as e:
         print(f"Error sending email: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    statement = select(User).where(User.username == form_data.username)
+    user = session.exec(statement).first()
+
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
