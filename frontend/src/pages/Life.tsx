@@ -9,37 +9,39 @@ export default function Life() {
     title: "",
     caption: "",
     category: "General",
-    image_url: "",
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const isLoggedIn = !!localStorage.getItem("token");
 
   const handleAddPost = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!selectedFile) return alert("Please select an image");
     const token = localStorage.getItem("token");
+
+    const formData = new FormData();
+    formData.append("title", newPost.title);
+    formData.append("caption", newPost.caption);
+    formData.append("category", newPost.category);
+    formData.append("image", selectedFile);
 
     try {
       const res = await fetch("http://localhost:8000/api/life", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newPost),
+        body: formData,
       });
 
       if (res.ok) {
         const savedPost = await res.json();
         setPosts([savedPost, ...posts]);
         setShowForm(false);
-        setNewPost({
-          title: "",
-          caption: "",
-          category: "General",
-          image_url: "",
-        });
+        setNewPost({ title: "", caption: "", category: "General" });
+        setSelectedFile(null);
       }
     } catch (err) {
-      console.error("Failed to add post", err);
+      console.error("Upload failed", err);
     }
   };
 
@@ -84,16 +86,33 @@ export default function Life() {
                 required
               />
 
-              <input
-                placeholder="Image URL (For now...)"
-                className="w-full bg-slate-950 border border-slate-800
-                  p-3 rounded-xl text-white outline-none focus:border-cyan-500"
-                value={newPost.image_url}
-                onChange={(e) =>
-                  setNewPost({ ...newPost, image_url: e.target.value })
-                }
-                required
-              />
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-500 uppercase font-mono pl-1">
+                  Upload_Disk_Resource
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="file-upload"
+                    onChange={(e) =>
+                      setSelectedFile(e.target.files?.[0] || null)
+                    }
+                  />
+
+                  <label
+                    htmlFor="file-upload"
+                    className="flex items-center justify-center gap-3 w-full bg-slate-950 border-2 border-dashed border-slate-800 p-6 rounded-xl text-slate-400 cursor-pointer hover:border-cyan-500/50 hover:text-cyan-400 transition-all"
+                  >
+                    <span className="text-sm font-mono italic">
+                      {selectedFile
+                        ? `SELECTED: ${selectedFile.name}`
+                        : "SELECT_IMAGE_FILE"}
+                    </span>
+                  </label>
+                </div>
+              </div>
 
               <textarea
                 placeholder="Caption"
