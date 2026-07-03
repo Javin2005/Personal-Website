@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select, desc
@@ -13,10 +14,12 @@ from .models import Project, About, CreativeItem, ContactForm, User, LifePost
 import os
 import resend
 import httpx
+import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
+
 
 
 @asynccontextmanager
@@ -36,6 +39,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 async def read_root():
@@ -98,15 +102,31 @@ def get_life_posts(session: Session = Depends(get_session)):
 
 
 @app.post("/api/life")
-def create_life_post(
-    post: LifePost,
+async def create_life_post(
+    title: str = Form(...),
+    caption: str = Form(...),
+    category: str = Form(...),
+    image: UploadFile = File(...),
     session: Session = Depends(get_session),
     current_user: str = Depends(get_current_user)
 ):
-    session.add(post)
+    file_path = f"uploads/{image.filename}"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(image.file,buffer)
+    
+    db_url = f"http://localhost:8000/{file_path}"
+
+    new_post = LifePost(
+        title=title,
+        caption=caption,
+        category=category,
+        image_url=db_url
+    )
+
+    session.add(new_post)
     session.commit()
-    session.refresh(post)
-    return post
+    session.refresh(new_post)
+    return new_post
 
 @app.post("/api/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
