@@ -1,6 +1,8 @@
 from sqlmodel import SQLModel, Field, JSON, Column
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr
+import datetime
+from datetime import timezone
 
 class ContactForm(BaseModel):
     name: str
@@ -41,3 +43,13 @@ class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str = Field(index=True, unique=True)
     hashed_password: str
+
+class LifePost(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    caption: str
+    image_url: str
+    category: str
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: datetime.datetime.now(timezone.utc)
+    )

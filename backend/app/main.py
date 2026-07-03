@@ -2,13 +2,13 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, select
+from sqlmodel import Session, select, desc
 from typing import List
 
-from .auth import verify_password, create_access_token, get_password_hash
+from .auth import verify_password, create_access_token, get_password_hash, get_current_user
 
 from .database import create_db_and_tables, get_session
-from .models import Project, About, CreativeItem, ContactForm, User
+from .models import Project, About, CreativeItem, ContactForm, User, LifePost
 
 import os
 import resend
@@ -89,6 +89,23 @@ async def handle_contact(form_data: ContactForm):
         print(f"Error sending email: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/api/life", response_model=List[LifePost])
+def get_life_posts(session: Session = Depends(get_session)):
+    statement = select(LifePost).order_by(desc(LifePost.created_at))
+    return session.exec(statement).all()
+
+
+@app.post("/api/life")
+def create_life_post(
+    post: LifePost,
+    session: Session = Depends(get_session),
+    current_user: str = Depends(get_current_user)
+):
+    session.add(post)
+    session.commit()
+    session.refresh(post)
+    return post
 
 @app.post("/api/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
