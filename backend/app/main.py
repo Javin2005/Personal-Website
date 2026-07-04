@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from base64 import b64encode
 from sqlmodel import Session, select, desc
 from typing import List
 
@@ -183,4 +184,54 @@ async def get_github_status():
         except Exception:
             pass
             
+    return {"active": False}
+
+
+@app.get("/api/status/spotify")
+async def get_spotify_status():
+    client_id = os.getenv("SPOTIFY_CLIENT_ID")
+    client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
+    refresh_token = os.getenv("SPOTIFY_REFRESH_TOKEN")
+
+
+    if not all([client_id, client_secret, refresh_token]):
+        return {"active": False}
+
+    async with httpx.AsyncClient() as client:
+        try:
+            auth_str = f"{client_id}:{client_secret}"
+            b64_auth = b64encode(auth_str.encode()).decode()
+
+            token_url = "https://accounts.spotify.com/api/token"
+            token_data = {
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token
+            }
+            token_headers = {
+                "Authorization": f"Basic {b64_auth}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+
+            token_res = await client.post(token_url, data=token_data, 
+                                          headers=token_headers)
+            access_token = token_res.json().get("access_token")
+
+            playback_url = "https://api.spotify.com/v1/me/player/currently-playing"
+            headers = {"Authorization": f"Bearer {access_token}"}
+
+            resp = await client.get(playback_url, headers=headers)
+
+            if resp.status_code == 204:
+                return {"active": False, "message": "Nothing playing"}
+            
+            data = resp.json()
+            if data.get("is_playing"):
+                return {
+                    "active": True,
+                    "track": data["item"] ["name"],
+                    "artist": data["item"] ["artist"] [0] ["name"],
+                    "link": data["item"] ["external_urls"] ["spotify"]
+                }
+        except Exception as e:
+            print(f"Spotify API Error: {e}")
     return {"active": False}
