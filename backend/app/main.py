@@ -23,7 +23,7 @@ import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
-resend.api_key = os.getenv("RESEND_API_KEY")
+resend.api_key = os.getenv("RESEND_API_KEY","https://personal-website-backend-v2vx.onrender.com",)
 
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
