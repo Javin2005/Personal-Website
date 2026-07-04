@@ -3,7 +3,6 @@ import ProjectCard from "../components/ProjectCard";
 import AboutSection from "../components/AboutSection";
 import CreativeCard from "../components/CreativeCard";
 import Contact from "../components/Contact";
-import Footer from "../components/Footer";
 import type { Project, About, CreativeItem } from "../types";
 
 function Home() {
@@ -26,8 +25,17 @@ function Home() {
 
     fetch("http://localhost:8000/api/creative")
       .then((res) => res.json())
-      .then((data) => setCreative(data))
-      .catch((err) => console.error("Could not get creative data:", err));
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setCreative(data);
+        } else {
+          setCreative([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Could not get creative data:", err);
+        setCreative([]);
+      });
   }, []);
 
   return (
@@ -97,7 +105,6 @@ function Home() {
         </div>
       </section>
       <Contact />
-      <Footer />
     </div>
   );
 }

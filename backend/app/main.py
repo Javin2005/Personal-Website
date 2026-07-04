@@ -136,6 +136,10 @@ async def handle_contact(form_data: ContactForm):
         print(f"Error sending email: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/creative", response_model=List[CreativeItem])
+def get_creative(session: Session = Depends(get_session)):
+    items = session.exec(select(CreativeItem)).all()
+    return items
 
 @app.get("/api/life", response_model=List[LifePost])
 def get_life_posts(session: Session = Depends(get_session)):

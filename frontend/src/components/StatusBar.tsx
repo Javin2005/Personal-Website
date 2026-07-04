@@ -24,13 +24,8 @@ export default function StatusBar() {
 
   return (
     <div className="w-full bg-cyan-500/5 border-b border-cyan-500/10 py-1.5 px-4 overflow-hidden backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto flex items-center justify-between font-mono text-[9px] md:text-[10px] uppercase tracking-widest text-cyan-500/60">
-        <div className="flex items-center gap-2">
-          <Activity size={12} className="animate-pulse text-cyan-400" />
-          <span className="hidden sm:inline">
-            System: <span className="text-cyan-400/80">Online</span>
-          </span>
-        </div>
+      <div className="max-w-7xl mx-auto flex items-center justify-center font-mono text-[9px] md:text-[10px] uppercase tracking-widest text-cyan-500/60">
+        <div className="flex items-center gap-2"></div>
 
         <div className="flex items-center gap-4">
           {spotify ? (

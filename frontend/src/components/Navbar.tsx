@@ -50,15 +50,22 @@ function Navbar() {
         </li>
 
         {isLoggedIn ? (
-          <li className="pl-4 border-l border-slate-700">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-[10px] uppercase tracking-tighter text-red-400 hover:text-red-300 transition-colors"
-            >
-              <LogOut size={14} />
-              Sign Out
-            </button>
-          </li>
+          <>
+            <li>
+              <Link to="/admin" className="hover:text-white transition-colors">
+                Admin
+              </Link>
+            </li>
+            <li className="pl-4 border-l border-slate-700">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-[10px] uppercase tracking-tighter text-red-400 hover:text-red-300 transition-colors"
+              >
+                <LogOut size={14} />
+                Sign Out
+              </button>
+            </li>
+          </>
         ) : (
           <li className="pl-4 border-l border-slate-700 opacity-20 hover:opacity-100 transition-opacity">
             <Link to="/login" className="text-slate-500 hover:text-cyan-400">
