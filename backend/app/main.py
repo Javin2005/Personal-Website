@@ -110,19 +110,28 @@ def get_about(session: Session = Depends(get_session)):
     return about
 
 @app.put("/api/about", response_model=About)
-def update_about(updated_about: About, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
-    db_about  = session.exec(select(About)).first()
+def update_about(
+    updated_about: About, 
+    session: Session = Depends(get_session), 
+    admin: str = Depends(get_current_user)
+):
+    db_about = session.exec(select(About)).first()
     if not db_about:
         raise HTTPException(status_code=404, detail="About data not found")
     
-    about_data = updated_about.model_dump(exclude_unset=True)
+
+
+    about_data = updated_about.model_dump(exclude={"id"})
+    
+
     for key, value in about_data.items():
         setattr(db_about, key, value)
-
+        
     session.add(db_about)
     session.commit()
     session.refresh(db_about)
     return db_about
+
 
 @app.post("/api/contact")
 async def handle_contact(form_data: ContactForm):

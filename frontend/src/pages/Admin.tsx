@@ -20,7 +20,7 @@ function Admin() {
   const handleUpdateAbout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!about) return;
-    const res = await fetch("${API_URL}/api/about", {
+    const res = await fetch(`${API_URL}/api/about`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -204,7 +204,7 @@ function Admin() {
                   tech_stack: form.tech.value.split(","),
                   featured: true,
                 };
-                fetch("${API_URL}/api/projects", {
+                fetch(`${API_URL}/api/projects`, {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
