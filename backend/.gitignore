@@ -1,0 +1,37 @@
+# --- System Files ---
+.DS_Store
+Thumbs.db
+*.log
+
+# --- IDE / Editors ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Python / Backend (Poetry & FastAPI) ---
+backend/__pycache__/
+backend/*.py[cod]
+backend/venv/
+backend/.venv/
+backend/.pytest_cache/
+backend/.env
+# Note: Keep poetry.lock in git, but ignore the virtualenv folder
+
+# --- Node / Frontend (Vite & React) ---
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.env
+frontend/.env.local
+
+# --- Docker ---
+.docker/
+
+__pycache__/
+*.py[cod]
+.env
+
+backend/database.db
+uploads/
