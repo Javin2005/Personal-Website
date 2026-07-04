@@ -229,7 +229,7 @@ async def get_spotify_status():
                 return {
                     "active": True,
                     "track": data["item"] ["name"],
-                    "artist": data["item"] ["artist"] [0] ["name"],
+                    "artist": data["item"] ["artists"] [0] ["name"],
                     "link": data["item"] ["external_urls"] ["spotify"]
                 }
         except Exception as e:

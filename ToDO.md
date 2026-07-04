@@ -17,16 +17,16 @@
 ## Phase 3: Security & Admin Dashboard
 - [x] **Authentication**: Implement JWT (JSON Web Tokens) in FastAPI.
 - [x] **Admin Page**: Create a simple dashboard at `/admin` (protected by login).
-- [ ] **CRUD Operations**: Build forms to:
+- [] **CRUD Operations**: Build forms to:
     - Add/Edit/Delete projects.
     - Upload "Life" photos (using FastAPI `UploadFile`).
-- [ ] **Storage**: Configure a folder or a service (like Cloudinary) to store uploaded images.
+- [] **Storage**: Configure a folder or a service (like Cloudinary) to store uploaded images.
 
 ## Phase 4: The "Proof of Life" Status Bar
 - [x] **GitHub Integration**:
     - Backend: Fetch latest events from `api.github.com/users/Javin2005/events`.
     - Frontend: Add a "Last pushed to..." ticker in the Navbar.
-- [ ] **Spotify Integration**:
+- [x] **Spotify Integration**:
     - Backend: Register Spotify App, handle OAuth `refresh_token`.
     - Frontend: "Now Playing" or "Last Listened" status.
 - [x] **Email System**: Integrate [Resend](https://resend.com/) in the backend for the Contact Form `POST` request.
