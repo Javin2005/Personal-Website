@@ -1,23 +1,20 @@
 import os
 import json
-from sqlmodel import Session, create_engine, SQLModel
+from sqlmodel import Session, SQLModel
+from .database import engine 
 from .models import Project, About, CreativeItem, User, LifePost
 from .auth import get_password_hash
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
-engine = create_engine(sqlite_url, echo=True)
 
 def migrate_data():
 
-    if os.path.exists(sqlite_file_name):
-        os.remove(sqlite_file_name)
-        print(f"Deleted old {sqlite_file_name}")
-
-    print("Creating tables...")
+    print("Creating tables in the target database...")
     SQLModel.metadata.create_all(engine)
 
     with open("app/data.json", "r") as file:
@@ -89,7 +86,7 @@ def migrate_data():
             session.add(db_post)
 
         session.commit() 
-        print("Migration complete! 'database.db' has been created and saved.")
+        print("Migration complete! Data has been synced to the database.")
 
 if __name__ == "__main__":
     migrate_data()
