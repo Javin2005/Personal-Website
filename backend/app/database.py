@@ -1,10 +1,13 @@
 from sqlmodel import create_engine, SQLModel, Session
 import os
+from dotenv import load_dotenv
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+load_dotenv()
 
-engine = create_engine(sqlite_url, echo=True)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///database.db")
+
+engine_args = {"connect_args": {"check_same_thread": False}} if "sqlite" in DATABASE_URL else {}
+engine = create_engine(DATABASE_URL, **engine_args)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
