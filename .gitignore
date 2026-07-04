@@ -32,4 +32,5 @@ frontend/.env.local
 __pycache__/
 *.py[cod]
 .env
-.database
+database.db
+uploads/
