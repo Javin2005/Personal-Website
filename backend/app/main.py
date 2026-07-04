@@ -23,11 +23,11 @@ import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
-resend.api_key = os.getenv("RESEND_API_KEY","https://personal-website-backend-v2vx.onrender.com",)
+resend.api_key = os.getenv("RESEND_API_KEY")
 
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-    api_key=os.getenv("SPOTIFY_API_KEY"), # Wait, use CLOUDINARY_API_KEY
+    api_key=os.getenv("SPOTIFY_API_KEY"),
     api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
 
@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-origins = ["http://localhost:5173"]
+origins = ["http://localhost:5173", "christian-carlson.vercel.app"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
