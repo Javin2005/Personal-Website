@@ -12,6 +12,8 @@ from .auth import verify_password, create_access_token, get_password_hash, get_c
 from .database import create_db_and_tables, get_session
 from .models import Project, About, CreativeItem, ContactForm, User, LifePost
 
+
+
 import os
 import resend
 import httpx
@@ -60,6 +62,37 @@ def get_featured_projects(session: Session = Depends(get_session)):
     return projects
 
 
+@app.post("/api/projects", response_model=Project)
+def create_project(project: Project, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
+    session.add(project)
+    session.commit()
+    session.refresh(project)
+    return project
+
+@app.put("/api/projects/{project_id}", response_model=Project)
+def update_project(project_id: int, updated_project: Project, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
+    db_project = session.get(Project, project_id)
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    project_data = updated_project.model_dump(exclude_unset=True)
+    for key, value in project_data.items():
+        setattr(db_project, key, value)
+
+    session.add(db_project)
+    session.commit()
+    session.refresh(db_project)
+    return db_project
+
+@app.delete("/api/projects/{project_id}")
+def delete_project(project_id: int, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
+    db_project = session.get(Project, project_id)
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    session.delete(db_project)
+    session.commit()
+    return {"status": "Project deleted"}
+
 @app.get("/api/about", response_model=About)
 def get_about(session: Session = Depends(get_session)):
     statement = select(About)
@@ -68,12 +101,20 @@ def get_about(session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="About data not found")
     return about
 
+@app.put("/api/about", response_model=About)
+def update_about(updated_about: About, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
+    db_about  = session.exec(select(About)).first()
+    if not db_about:
+        raise HTTPException(status_code=404, detail="About data not found")
+    
+    about_data = updated_about.model_dump(exclude_unset=True)
+    for key, value in about_data.items():
+        setattr(db_about, key, value)
 
-@app.get("/api/creative", response_model=List[CreativeItem])
-def get_creative(session: Session = Depends(get_session)):
-    items = session.exec(select(CreativeItem)).all()
-    return items
-
+    session.add(db_about)
+    session.commit()
+    session.refresh(db_about)
+    return db_about
 
 @app.post("/api/contact")
 async def handle_contact(form_data: ContactForm):
@@ -124,10 +165,22 @@ async def create_life_post(
         image_url=db_url
     )
 
+
     session.add(new_post)
     session.commit()
     session.refresh(new_post)
     return new_post
+
+@app.delete("/api/life/{post_id}")
+def delete_life_post(post_id: int, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
+    db_post = session.get(LifePost, post_id)
+    if not db_post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    session.delete(db_post)
+    session.commit()
+    return{"status": "Post deleted"}
+
 
 @app.post("/api/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
