@@ -9,21 +9,22 @@ function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [about, setAbout] = useState<About | null>(null);
   const [creative, setCreative] = useState<CreativeItem[]>([]);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/projects/featured")
+    fetch(`${API_URL}/api/projects/featured`)
       .then((res) => res.json())
       .then((data) => {
         setProjects(data);
       })
       .catch((err) => console.error("Could not get project:", err));
 
-    fetch("http://localhost:8000/api/about")
+    fetch(`${API_URL}/api/about`)
       .then((res) => res.json())
       .then((data) => setAbout(data))
       .catch((err) => console.error("Could not About data:", err));
 
-    fetch("http://localhost:8000/api/creative")
+    fetch(`${API_URL}/api/creative`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {

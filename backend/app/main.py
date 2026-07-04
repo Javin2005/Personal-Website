@@ -12,6 +12,8 @@ from .auth import verify_password, create_access_token, get_password_hash, get_c
 from .database import create_db_and_tables, get_session
 from .models import Project, About, CreativeItem, ContactForm, User, LifePost
 
+import cloudinary
+import cloudinary.uploader
 
 
 import os
@@ -22,6 +24,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("SPOTIFY_API_KEY"), # Wait, use CLOUDINARY_API_KEY
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
 
 
 
@@ -156,24 +164,28 @@ async def create_life_post(
     session: Session = Depends(get_session),
     current_user: str = Depends(get_current_user)
 ):
-    file_path = f"uploads/{image.filename}"
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(image.file,buffer)
-    
-    db_url = f"http://localhost:8000/{file_path}"
+    try:
 
-    new_post = LifePost(
-        title=title,
-        caption=caption,
-        category=category,
-        image_url=db_url
-    )
+        upload_result = cloudinary.uploader.upload(image.file)
+        
+
+        db_url = upload_result.get("secure_url")
 
 
-    session.add(new_post)
-    session.commit()
-    session.refresh(new_post)
-    return new_post
+        new_post = LifePost(
+            title=title,
+            caption=caption,
+            category=category,
+            image_url=db_url 
+        )
+
+        session.add(new_post)
+        session.commit()
+        session.refresh(new_post)
+        return new_post
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
+
 
 @app.delete("/api/life/{post_id}")
 def delete_life_post(post_id: int, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):

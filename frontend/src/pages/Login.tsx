@@ -7,6 +7,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -17,7 +18,7 @@ function Login() {
     formData.append("password", password);
 
     try {
-      const response = await fetch("http://localhost:8000/api/token", {
+      const response = await fetch(`${API_URL}/api/token`, {
         method: "POST",
         body: formData,
       });

@@ -12,6 +12,7 @@ export default function Life() {
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const isLoggedIn = !!localStorage.getItem("token");
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleAddPost = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -25,7 +26,7 @@ export default function Life() {
     formData.append("image", selectedFile);
 
     try {
-      const res = await fetch("http://localhost:8000/api/life", {
+      const res = await fetch(`${API_URL}/api/life`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -46,7 +47,7 @@ export default function Life() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/life")
+    fetch(`${API_URL}/api/life`)
       .then((res) => res.json())
       .then((data) => setPosts(data));
   }, []);

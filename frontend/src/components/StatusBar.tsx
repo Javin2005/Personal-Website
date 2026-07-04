@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
-import { GitBranch, Activity, Music } from "lucide-react";
+import { GitBranch, Music } from "lucide-react";
 
 export default function StatusBar() {
   const [github, setGithub] = useState<any>(null);
   const [spotify, setSpotify] = useState<any>(null);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchData = () => {
-      fetch("http://localhost:8000/api/status/github")
+      fetch(`${API_URL}/api/status/github`)
         .then((res) => res.json())
         .then((data) => data.active && setGithub(data));
 
-      fetch("http://localhost:8000/api/status/spotify")
+      fetch(`${API_URL}/api/status/spotify`)
         .then((res) => res.json())
         .then((data) => setSpotify(data.active ? data : null));
     };

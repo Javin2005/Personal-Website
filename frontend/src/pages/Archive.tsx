@@ -7,9 +7,10 @@ import ProjectCard from "../components/ProjectCard";
 function Archive() {
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/projects")
+    fetch(`${API_URL}/api/projects`)
       .then((res) => res.json())
       .then((data) => setAllProjects(data))
       .catch((err) => console.error("Could not fetch the projects", err));

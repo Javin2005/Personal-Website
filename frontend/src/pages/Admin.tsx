@@ -7,6 +7,7 @@ function Admin() {
   const [activeTab, setActiveTab] = useState<"profile" | "projects" | "life">(
     "profile",
   );
+  const API_URL = import.meta.env.VITE_API_URL;
   const [about, setAbout] = useState<About | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [lifePosts, setLifePosts] = useState<LifePost[]>([]);
@@ -19,7 +20,7 @@ function Admin() {
   const handleUpdateAbout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!about) return;
-    const res = await fetch("http://localhost:8000/api/about", {
+    const res = await fetch("${API_URL}/api/about", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -32,7 +33,7 @@ function Admin() {
 
   const handleDeleteProject = async (id: number) => {
     if (!confirm("Delete project?")) return;
-    const res = await fetch(`http://localhost:8000/api/projects/${id}`, {
+    const res = await fetch(`${API_URL}/api/projects/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -43,7 +44,7 @@ function Admin() {
     if (!confirm("Are you sure? This will delete the photo permanently."))
       return;
     try {
-      const res = await fetch(`http://localhost:8000/api/life/${id}`, {
+      const res = await fetch(`${API_URL}/api/life/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -57,13 +58,13 @@ function Admin() {
 
   useEffect(() => {
     if (!token) navigate("/login");
-    fetch("http://localhost:8000/api/about")
+    fetch(`${API_URL}/api/about`)
       .then((res) => res.json())
       .then(setAbout);
-    fetch("http://localhost:8000/api/projects")
+    fetch(`${API_URL}/api/projects`)
       .then((res) => res.json())
       .then(setProjects);
-    fetch("http://localhost:8000/api/life")
+    fetch(`${API_URL}/api/life`)
       .then((res) => res.json())
       .then(setLifePosts);
   }, [token, navigate]);
@@ -203,7 +204,7 @@ function Admin() {
                   tech_stack: form.tech.value.split(","),
                   featured: true,
                 };
-                fetch("http://localhost:8000/api/projects", {
+                fetch("${API_URL}/api/projects", {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
