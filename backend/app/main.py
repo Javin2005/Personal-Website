@@ -43,7 +43,9 @@ app = FastAPI(lifespan=lifespan)
 
 origins = [
     "http://localhost:5173", 
-    "https://christiancarlson.vercel.app"
+    "https://christiancarlson.vercel.app",
+    "https://www.javincarlson.com",
+    "https://javincarlson.com"
 ]
 app.add_middleware(
     CORSMiddleware,
