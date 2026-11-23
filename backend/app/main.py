@@ -223,50 +223,88 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Sessi
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 @app.get("/api/status/github")
 async def get_github_status():
     username = "Javin2005"
-    url = f"https://api.github.com/users/{username}/events"
-    
     token = os.getenv("GITHUB_TOKEN")
-    headers = {"Accept": "application/vnd.github.v3+json"}
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "javincarlson-portfolio",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
     if token:
-        headers["Authorization"] = f"token {token}"
+        headers["Authorization"] = f"Bearer {token}"
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         try:
-            response = await client.get(url, headers=headers)
-            if response.status_code != 200:
-                return {"active": False}
+            # 1. Check recent Events API
+            events_res = await client.get(
+                f"https://api.github.com/users/{username}/events",
+                headers=headers,
+            )
+            if events_res.status_code == 200:
+                events = events_res.json()
+                push_event = (
+                    next((e for e in events if e.get("type") == "PushEvent"), None)
+                    if isinstance(events, list)
+                    else None
+                )
+                if push_event:
+                    repo_full_name = push_event.get("repo", {}).get("name", "")
+                    repo_name = repo_full_name.split("/")[-1] or "unknown"
+                    payload = push_event.get("payload", {})
+                    head_sha = payload.get("head")
 
-            events = response.json()
-            if not isinstance(events, list):
-                return {"active": False}
+                    if repo_full_name and head_sha:
+                        commit_res = await client.get(
+                            f"https://api.github.com/repos/{repo_full_name}/commits/{head_sha}",
+                            headers=headers,
+                        )
+                        if commit_res.status_code == 200:
+                            msg = commit_res.json().get("commit", {}).get("message", "")
+                            if msg:
+                                return {
+                                    "repo": repo_name,
+                                    "message": msg.splitlines()[0],
+                                    "active": True,
+                                }
 
-
-            push_event = next((e for e in events if e.get("type") == "PushEvent"), None)
-
-            if push_event:
-                repo_full_name = push_event.get("repo", {}).get("name", "unknown/repo")
-                repo_name = repo_full_name.split("/")[-1]
-                
-                payload = push_event.get("payload", {})
-                commits = payload.get("commits", [])
-                
-                if commits and len(commits) > 0:
-                    commit_msg = commits[0].get("message", "Updated files")
-                else:
                     ref = payload.get("ref", "main").split("/")[-1]
-                    commit_msg = f"Pushed to {ref}"
+                    return {
+                        "repo": repo_name,
+                        "message": f"Pushed to {ref}",
+                        "active": True,
+                    }
+            else:
+                print(f"GitHub Events API {events_res.status_code}: {events_res.text}")
 
-                return {
-                    "repo": repo_name,
-                    "message": commit_msg,
-                    "active": True
-                }
-        except Exception:
-            pass
-            
+            # 2. Fallback if no push events in the last 30 days
+            repos_res = await client.get(
+                f"https://api.github.com/users/{username}/repos?sort=pushed&per_page=1",
+                headers=headers,
+            )
+            if repos_res.status_code == 200:
+                repos = repos_res.json()
+                if isinstance(repos, list) and repos:
+                    repo_full_name = repos[0]["full_name"]
+                    repo_name = repos[0]["name"]
+                    commits_res = await client.get(
+                        f"https://api.github.com/repos/{repo_full_name}/commits?per_page=1",
+                        headers=headers,
+                    )
+                    if commits_res.status_code == 200:
+                        commits = commits_res.json()
+                        if isinstance(commits, list) and commits:
+                            msg = commits[0].get("commit", {}).get("message", "Updated files")
+                            return {
+                                "repo": repo_name,
+                                "message": msg.splitlines()[0],
+                                "active": True,
+                            }
+        except Exception as e:
+            print(f"GitHub API Error: {e}")
+
     return {"active": False}
 
 
