@@ -148,24 +148,29 @@ def update_about(
 
 
 @app.post("/api/contact")
-async def handle_contact(form_data: ContactForm):
+@limiter.limit("3/minute")
+async def handle_contact(request: Request, form_data: ContactForm):
+    name = html.escape(form_data.name)
+    sender = html.escape(form_data.email)
+    message = html.escape(form_data.message).replace("\n", "<br>")
     try:
         email = resend.Emails.send({
             "from": "onboarding@resend.dev",
             "to": "christiancarlsonwork@gmail.com",
-            "subject": f"New Message from {form_data.name}",
+            "subject": f"New Message from {form_data.name.replace(chr(10), ' ')}",
             "html": f"""
                 <h3>New Portfolio Message</h3>
-                <p><strong>From:</strong> {form_data.name} ({form_data.email})</p>
+                <p><strong>From:</strong> {name} ({sender})</p>
                 <p><strong>Message:</strong></p>
-                <p>{form_data.message}</p>
+                <p>{message}</p>
             """,
         })
         return {"status": "success", "id": email["id"]}
 
     except Exception as e:
         print(f"Error sending email: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Could not send message")
+
 
 @app.get("/api/creative", response_model=List[CreativeItem])
 def get_creative(session: Session = Depends(get_session)):

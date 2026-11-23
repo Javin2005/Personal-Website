@@ -1,13 +1,13 @@
 from sqlmodel import SQLModel, Field, JSON, Column
 from typing import List, Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field as PydField
 import datetime
 from datetime import timezone
 
 class ContactForm(BaseModel):
-    name: str
+    name: str = PydField(min_length=1, max_length=100)
     email: EmailStr
-    message:str
+    message:str = PydField(min_length=1, max_length=5000)
 
 class SocialLink(SQLModel):
     platform: str
