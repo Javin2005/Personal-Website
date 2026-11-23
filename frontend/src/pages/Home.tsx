@@ -48,11 +48,11 @@ function Home() {
           loop
           muted
           playsInline
-          className="w-full h-full object-cover opacity-35"
+          className="w-full h-full object-cover opacity-55"
         >
           <source src="/assets/BlackHole_preview.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-linear-to-b from-black/20 via-black/40 to-slate-950/90" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/15 via-black/25 to-black/45" />
       </div>
 
       {/* 2. HERO LAYER: Transparent so the black hole is visible behind your name */}
@@ -71,7 +71,7 @@ function Home() {
       </section>
 
       {/* 3. FOREGROUND SHEET: Slides up IN FRONT of the black hole as you scroll */}
-      <div className="relative z-10 bg-slate-950/80 backdrop-blur-md border-t border-white/10">
+      <div className="relative z-10 bg-slate-950/35 backdrop-blur-[2px] border-t border-white/10">
         {about ? (
           <AboutSection about={about} />
         ) : (
