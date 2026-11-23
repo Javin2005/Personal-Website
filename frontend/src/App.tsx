@@ -10,7 +10,7 @@ import Admin from "./pages/Admin";
 function App() {
   return (
     <Router>
-      <div className="bg-slate-950 min-h-screen selection:bg-cyan-500/30 overflow-x-hidden">
+      <div className="bg-slate-950 min-h-screen selection:bg-cyan-500/30 overflow-x-clip">
         <div className="bg-noise" />
         <StatusBar />
         <Navbar />

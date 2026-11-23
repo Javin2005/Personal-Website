@@ -40,19 +40,24 @@ function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <section className="relative flex flex-col items-center justify-center min-h-[85vh] text-center px-4 overflow-hidden">
+    <div className="relative min-h-screen">
+      {/* 1. LOCKED BACKGROUND LAYER: Black Hole stays fixed when scrolling */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+          className="w-full h-full object-cover opacity-35"
         >
           <source src="/assets/BlackHole_preview.mp4" type="video/mp4" />
         </video>
+        <div className="absolute inset-0 bg-linear-to-b from-black/20 via-black/40 to-slate-950/90" />
+      </div>
 
-        <div className="relative z-10">
+      {/* 2. HERO LAYER: Transparent so the black hole is visible behind your name */}
+      <section className="relative z-10 flex flex-col items-center justify-center min-h-[90vh] text-center px-4">
+        <div>
           <h1
             className="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-cyan-400
             via-blue-500 to-blue-600 mb-6 font-serif tracking-tighter animate-gradient"
@@ -63,49 +68,52 @@ function Home() {
             Third year cs student at Lund
           </p>
         </div>
-
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-slate-950 to-transparent"></div>
       </section>
 
-      {about ? (
-        <AboutSection about={about} />
-      ) : (
-        <div className="max-w-6xl mx-auto py-20 px-6 text-slate-500 italic">
-          loading profile...
-        </div>
-      )}
+      {/* 3. FOREGROUND SHEET: Slides up IN FRONT of the black hole as you scroll */}
+      <div className="relative z-10 bg-slate-950/80 backdrop-blur-md border-t border-white/10">
+        {about ? (
+          <AboutSection about={about} />
+        ) : (
+          <div className="max-w-6xl mx-auto py-20 px-6 text-slate-500 italic">
+            loading profile...
+          </div>
+        )}
 
-      <section id="projects" className="max-w-6xl mx-auto py-20 px-6">
-        <h2 className="text-3xl font-bold text-white mb-12 flex items-center gap-4">
-          <span className="text-cyan-500 font-mono text-xl">02.</span>
-          Featured Project
-          <div className="h-px bg-slate-800 grow"></div>
-        </h2>
+        <section id="projects" className="max-w-6xl mx-auto py-20 px-6">
+          <h2 className="text-3xl font-bold text-white mb-12 flex items-center gap-4">
+            <span className="text-cyan-500 font-mono text-xl">02.</span>
+            Featured Project
+            <div className="h-px bg-slate-800 grow"></div>
+          </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {projects.length > 0 ? (
-            projects.map((project) => (
-              <ProjectCard key={project.id} {...project} />
-            ))
-          ) : (
-            <p className="text-slate-500 italic"> loading projects...</p>
-          )}
-        </div>
-      </section>
-      <section id="creative" className="max-w-6xl mx-auto py-20 px-6">
-        <h2 className="text-3xl font-bold text-white mb-12 flex items-center gap-4">
-          <span className="text-cyan-500 font-mono text-xl">03.</span>
-          Creative Playground
-          <div className="h-px bg-slate-800 grow"></div>
-        </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {projects.length > 0 ? (
+              projects.map((project) => (
+                <ProjectCard key={project.id} {...project} />
+              ))
+            ) : (
+              <p className="text-slate-500 italic">loading projects...</p>
+            )}
+          </div>
+        </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {creative.map((item) => (
-            <CreativeCard key={item.id} item={item} />
-          ))}
-        </div>
-      </section>
-      <Contact />
+        <section id="creative" className="max-w-6xl mx-auto py-20 px-6">
+          <h2 className="text-3xl font-bold text-white mb-12 flex items-center gap-4">
+            <span className="text-cyan-500 font-mono text-xl">03.</span>
+            Creative Playground
+            <div className="h-px bg-slate-800 grow"></div>
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {creative.map((item) => (
+              <CreativeCard key={item.id} item={item} />
+            ))}
+          </div>
+        </section>
+
+        <Contact />
+      </div>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export default function StatusBar() {
   }, []);
 
   return (
-    <div className="w-full bg-cyan-500/5 border-b border-cyan-500/10 py-1.5 px-4 overflow-hidden backdrop-blur-sm">
+    <div className="relative z-50 w-full bg-cyan-500/5 border-b border-cyan-500/10 py-1.5 px-4 overflow-hidden backdrop-blur-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-center font-mono text-[9px] md:text-[10px] uppercase tracking-widest text-cyan-500/60">
         <div className="flex items-center gap-2"></div>
 
