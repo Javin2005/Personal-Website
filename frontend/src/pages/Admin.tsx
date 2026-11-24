@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {API_URL, authFetch, isLoggedIn } from "../auth";
 import { User, FileCode, Camera, Save, Trash2, Plus } from "lucide-react";
 import type { About, Project, LifePost } from "../types";
 
@@ -7,7 +8,6 @@ function Admin() {
   const [activeTab, setActiveTab] = useState<"profile" | "projects" | "life">(
     "profile",
   );
-  const API_URL = import.meta.env.VITE_API_URL;
   const [about, setAbout] = useState<About | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [lifePosts, setLifePosts] = useState<LifePost[]>([]);
@@ -15,17 +15,14 @@ function Admin() {
   const [showProjForm, setShowProjForm] = useState(false);
 
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+
 
   const handleUpdateAbout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!about) return;
-    const res = await fetch(`${API_URL}/api/about`, {
+    const res = await authFetch("/api/about", {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json"},
       body: JSON.stringify(about),
     });
     if (res.ok) setStatus("Profile saved!");
@@ -33,9 +30,8 @@ function Admin() {
 
   const handleDeleteProject = async (id: number) => {
     if (!confirm("Delete project?")) return;
-    const res = await fetch(`${API_URL}/api/projects/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await authFetch(`/api/projects/${id}`, {
+      method: "DELETE"
     });
     if (res.ok) setProjects(projects.filter((p) => p.id !== id));
   };
@@ -44,9 +40,8 @@ function Admin() {
     if (!confirm("Are you sure? This will delete the photo permanently."))
       return;
     try {
-      const res = await fetch(`${API_URL}/api/life/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await authFetch(`/api/life/${id}`, {
+        method: "DELETE"
       });
       if (res.ok) {
         setLifePosts(lifePosts.filter((p) => p.id !== id));
@@ -57,7 +52,10 @@ function Admin() {
   };
 
   useEffect(() => {
-    if (!token) navigate("/login");
+    if(!isLoggedIn()){
+      navigate("/login");
+      return;
+    }
     fetch(`${API_URL}/api/about`)
       .then((res) => res.json())
       .then(setAbout);
@@ -67,7 +65,7 @@ function Admin() {
     fetch(`${API_URL}/api/life`)
       .then((res) => res.json())
       .then(setLifePosts);
-  }, [token, navigate]);
+  }, [navigate]);
 
   if (!about)
     return (
@@ -204,12 +202,9 @@ function Admin() {
                   tech_stack: form.tech.value.split(","),
                   featured: true,
                 };
-                fetch(`${API_URL}/api/projects`, {
+                authFetch("/api/projects", {
                   method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                  },
+                  headers: { "content-Type": "application/json" },
                   body: JSON.stringify(newP),
                 }).then(() => {
                   setShowProjForm(false);
