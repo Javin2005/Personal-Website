@@ -1,308 +1,276 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {API_URL, authFetch, isLoggedIn } from "../auth";
-import { User, FileCode, Camera, Save, Trash2, Plus } from "lucide-react";
-import type { About, Project, LifePost } from "../types";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import AboutEditor from "../admin/AboutEditor";
+import CollectionEditor from "../admin/CollectionEditor";
+import { Button } from "../admin/fields";
+import { AppearanceTab, HeroTab, LayoutTab } from "../admin/SettingsEditors";
+import { API_URL, isLoggedIn, logout, sendJson } from "../auth";
+import { useSite } from "../site/useSite";
+import { applyTheme } from "../site/theme";
+import type { Education, Experience, Interest, Project, Settings, SkillGroup } from "../types";
 
-function Admin() {
-  const [activeTab, setActiveTab] = useState<"profile" | "projects" | "life">(
-    "profile",
-  );
-  const [about, setAbout] = useState<About | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [lifePosts, setLifePosts] = useState<LifePost[]>([]);
-  const [status, setStatus] = useState("");
-  const [showProjForm, setShowProjForm] = useState(false);
+const TABS = [
+  { id: "appearance", label: "Appearance", group: "Settings" },
+  { id: "hero", label: "Hero", group: "Settings" },
+  { id: "layout", label: "Sections & menu", group: "Settings" },
+  { id: "about", label: "About", group: "Content" },
+  { id: "skills", label: "Skills", group: "Content" },
+  { id: "experience", label: "Experience", group: "Content" },
+  { id: "education", label: "Education", group: "Content" },
+  { id: "projects", label: "Projects", group: "Content" },
+  { id: "interests", label: "Interests", group: "Content" },
+] as const;
 
+type TabId = (typeof TABS)[number]["id"];
+const SETTINGS_TABS: TabId[] = ["appearance", "hero", "layout"];
+
+export default function Admin() {
   const navigate = useNavigate();
+  const { site, reload } = useSite();
+  const [tab, setTab] = useState<TabId>("appearance");
 
-  // FastAPI sends errors as {detail: "..."} or, for validation errors,
-  // {detail: [{loc: [...], msg: "..."}]}. Turn either into readable text.
-  const errorText = async (res: Response) => {
-    const body = await res.json().catch(() => null);
-    if (typeof body?.detail === "string") return body.detail;
-    if (Array.isArray(body?.detail))
-      return body.detail
-        .map((d: { loc: string[]; msg: string }) => `${d.loc.at(-1)}: ${d.msg}`)
-        .join(", ");
-    return `Request failed (${res.status})`;
-  };
-
-
-  const handleUpdateAbout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!about) return;
-    const res = await authFetch("/api/about", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json"},
-      body: JSON.stringify(about),
-    });
-    setStatus(res.ok ? "Profile saved!" : `Error: ${await errorText(res)}`);
-  };
-
-  const handleDeleteProject = async (id: number) => {
-    if (!confirm("Delete project?")) return;
-    const res = await authFetch(`/api/projects/${id}`, {
-      method: "DELETE"
-    });
-    if (res.ok) setProjects(projects.filter((p) => p.id !== id));
-    else alert(`Delete failed: ${await errorText(res)}`);
-  };
-
-  const handleDeleteLife = async (id: number) => {
-    if (!confirm("Are you sure? This will delete the photo permanently."))
-      return;
-    try {
-      const res = await authFetch(`/api/life/${id}`, {
-        method: "DELETE"
-      });
-      if (res.ok) {
-        setLifePosts(lifePosts.filter((p) => p.id !== id));
-      } else {
-        alert(`Delete failed: ${await errorText(res)}`);
-      }
-    } catch (err) {
-      console.error("Delete error:", err);
-    }
-  };
+  // The settings being edited. They only reach the database when you press Save.
+  const [draft, setDraft] = useState<Settings | null>(null);
+  const [saved, setSaved] = useState<Settings | null>(null);
+  const [message, setMessage] = useState("");
+  const [resetKey, setResetKey] = useState(0); // bumping this remounts the forms
 
   useEffect(() => {
-    if(!isLoggedIn()){
+    if (!isLoggedIn()) {
       navigate("/login");
       return;
     }
-    fetch(`${API_URL}/api/about`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then(setAbout)
-      .catch(() => setStatus("Could not load profile from the server"));
-    fetch(`${API_URL}/api/projects`)
+    fetch(`${API_URL}/api/settings`)
       .then((res) => res.json())
-      .then(setProjects)
-      .catch(() => {});
-    fetch(`${API_URL}/api/life`)
-      .then((res) => res.json())
-      .then(setLifePosts)
-      .catch(() => {});
+      .then((data: Settings) => {
+        setDraft(data);
+        setSaved(data);
+      })
+      .catch(() => setMessage("Couldn't load the settings. The server may be waking up; reload in a minute."));
   }, [navigate]);
 
-  if (!about)
-    return (
-      <div className="pt-32 text-center text-cyan-500 font-mono">
-        {status || "Initializing..."}
-      </div>
-    );
+  // Live preview: show the draft colors and fonts while editing, and put
+  // the saved ones back when leaving the admin page.
+  useEffect(() => {
+    if (draft) applyTheme(draft.theme);
+  }, [draft]);
+  useEffect(() => () => applyTheme(site.settings.theme), [site.settings.theme]);
+
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+
+  const saveSettings = async () => {
+    if (!draft) return;
+    try {
+      const result = await sendJson<Settings>("/api/settings", "PUT", draft);
+      setSaved(result);
+      setDraft(result);
+      setMessage("Saved. The site is updated.");
+      reload();
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Couldn't save");
+    }
+  };
+
+  const discard = () => {
+    setDraft(saved);
+    setResetKey((k) => k + 1);
+    setMessage("Changes discarded.");
+  };
+
+  const resetToDefaults = async () => {
+    try {
+      const defaults = await sendJson<Settings>("/api/settings/defaults", "GET");
+      setDraft(defaults);
+      setResetKey((k) => k + 1);
+      setMessage("Default settings loaded. Press Save to keep them.");
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Couldn't load defaults");
+    }
+  };
+
+  const isSettingsTab = SETTINGS_TABS.includes(tab);
 
   return (
-    <div className="pt-32 pb-20 px-6 max-w-6xl mx-auto min-h-screen font-mono">
-      <div className="flex flex-col md:flex-row gap-12">
-        <aside className="w-full md:w-64 space-y-2">
+    <div className="min-h-screen bg-bg">
+      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b border-text/10 bg-bg/90 px-[max(20px,4vw)] py-4 backdrop-blur">
+        <p className="font-mono text-sm">
+          <span className="text-accent">admin</span> <span className="text-muted">/ {TABS.find((t) => t.id === tab)?.label}</span>
+        </p>
+        <div className="flex items-center gap-5 text-sm">
+          <Link to="/" className="hover:text-accent">
+            View site
+          </Link>
           <button
-            onClick={() => setActiveTab("profile")}
-            className={`w-full flex items-center gap-3 p-4 rounded-xl ${activeTab === "profile" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/50" : "text-slate-500"}`}
+            type="button"
+            className="cursor-pointer text-muted hover:text-accent"
+            onClick={() => {
+              logout();
+              navigate("/");
+            }}
           >
-            <User size={18} /> Profile
+            Sign out
           </button>
-          <button
-            onClick={() => setActiveTab("projects")}
-            className={`w-full flex items-center gap-3 p-4 rounded-xl ${activeTab === "projects" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/50" : "text-slate-500"}`}
-          >
-            <FileCode size={18} /> Projects
-          </button>
-          <button
-            onClick={() => setActiveTab("life")}
-            className={`w-full flex items-center gap-3 p-4 rounded-xl ${activeTab === "life" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/50" : "text-slate-500"}`}
-          >
-            <Camera size={18} /> Life Gallery
-          </button>
-        </aside>
+        </div>
+      </header>
 
-        <main className="flex-1 bg-slate-900/30 border border-slate-800 rounded-3xl p-8">
-          {activeTab === "profile" && (
-            <form onSubmit={handleUpdateAbout} className="space-y-6">
-              <h3 className="text-xl font-bold text-white mb-6">
-                Edit Identity
-              </h3>
-              <input
-                className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-white"
-                value={about.name}
-                onChange={(e) => setAbout({ ...about, name: e.target.value })}
-                placeholder="Name"
-              />
-              <input
-                className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-white"
-                value={about.title}
-                onChange={(e) => setAbout({ ...about, title: e.target.value })}
-                placeholder="Title"
-              />
-              <textarea
-                className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-white h-32"
-                value={about.bio}
-                onChange={(e) => setAbout({ ...about, bio: e.target.value })}
-                placeholder="Bio"
-              />
-              <button
-                type="submit"
-                className="bg-cyan-600 px-8 py-3 rounded-xl text-white font-bold flex items-center gap-2"
-              >
-                <Save size={18} /> Commit Changes
-              </button>
-              <p className="text-cyan-500 text-xs">{status}</p>
-            </form>
-          )}
+      <div className="grid gap-10 px-[max(20px,4vw)] py-10 md:grid-cols-[13rem_minmax(0,1fr)]">
+        <nav className="md:sticky md:top-24 md:self-start">
+          {["Settings", "Content"].map((group) => (
+            <div key={group} className="mb-6">
+              <p className="mb-2 font-mono text-xs tracking-[0.06em] text-muted uppercase">{group}</p>
+              <ul className="flex flex-wrap gap-1 md:grid">
+                {TABS.filter((t) => t.group === group).map((t) => (
+                  <li key={t.id}>
+                    <button
+                      type="button"
+                      onClick={() => setTab(t.id)}
+                      className={`w-full cursor-pointer px-3 py-1.5 text-left text-sm transition-colors ${
+                        tab === t.id ? "bg-surface text-accent" : "text-text/75 hover:text-text"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
 
-          {activeTab === "projects" && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-white">
-                  Project Management
-                </h3>
-                <button
-                  onClick={() => setShowProjForm(true)}
-                  className="flex items-center gap-2 text-cyan-400 text-sm hover:underline"
-                >
-                  <Plus size={16} /> New Project
-                </button>
+        <main className="max-w-4xl min-w-0 pb-24">
+          {isSettingsTab &&
+            (draft ? (
+              <div key={resetKey}>
+                {tab === "appearance" && <AppearanceTab draft={draft} setDraft={setDraft} />}
+                {tab === "hero" && <HeroTab draft={draft} setDraft={setDraft} />}
+                {tab === "layout" && <LayoutTab draft={draft} setDraft={setDraft} />}
               </div>
-              {projects.map((p) => (
-                <div
-                  key={p.id}
-                  className="bg-slate-950/50 p-4 border border-slate-800 rounded-xl flex justify-between"
-                >
-                  <span className="text-slate-200">{p.title}</span>
-                  <Trash2
-                    size={16}
-                    className="text-red-500 cursor-pointer"
-                    onClick={() => handleDeleteProject(p.id)}
-                  />
-                </div>
-              ))}
-            </div>
+            ) : (
+              <p className="text-sm text-muted">{message || "Loading settings…"}</p>
+            ))}
+
+          {tab === "about" && <AboutEditor />}
+
+          {tab === "skills" && (
+            <CollectionEditor<SkillGroup>
+              path="skills"
+              title="Skills"
+              description="Groups of tools and languages, e.g. 'Use most days'. Shown in the about section."
+              blank={{ label: "", items: [] }}
+              label={(g) => `${g.label}: ${g.items.join(", ")}`}
+              fields={[
+                { key: "label", label: "Group name", type: "text" },
+                { key: "items", label: "Items", type: "list" },
+              ]}
+            />
           )}
 
-          {activeTab === "life" && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {lifePosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="relative group rounded-lg overflow-hidden border border-slate-800"
-                >
-                  <img
-                    src={post.image_url}
-                    className="aspect-square object-cover"
-                  />
-                  <button
-                    onClick={() => handleDeleteLife(post.id)}
-                    className="absolute top-2 right-2 p-2 bg-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
+          {tab === "experience" && (
+            <CollectionEditor<Experience>
+              path="experience"
+              title="Experience"
+              description="Jobs, roles and volunteering, newest first."
+              blank={{ role: "", organisation: "", location: "", period: "", summary: "", tags: [] }}
+              label={(e) => `${e.role}, ${e.organisation}`}
+              fields={[
+                { key: "role", label: "Role", type: "text" },
+                { key: "organisation", label: "Organisation", type: "text" },
+                { key: "period", label: "When", type: "text", hint: "e.g. Summer 2026 or 2024 – 2026" },
+                { key: "location", label: "Where", type: "text" },
+                { key: "summary", label: "What you did", type: "textarea" },
+                { key: "tags", label: "Tags", type: "list" },
+              ]}
+            />
+          )}
+
+          {tab === "education" && (
+            <CollectionEditor<Education>
+              path="education"
+              title="Education"
+              description="Schools and programmes, with the courses you've finished."
+              blank={{ school: "", programme: "", location: "", period: "", notes: "", courses: [] }}
+              label={(e) => `${e.school}, ${e.programme}`}
+              fields={[
+                { key: "school", label: "School", type: "text" },
+                { key: "programme", label: "Programme", type: "text" },
+                { key: "period", label: "When", type: "text" },
+                { key: "location", label: "Where", type: "text" },
+                { key: "notes", label: "Notes", type: "textarea" },
+                { key: "courses", label: "Completed courses", type: "lines" },
+              ]}
+            />
+          )}
+
+          {tab === "projects" && (
+            <CollectionEditor<Project>
+              path="projects"
+              title="Projects"
+              description="'Featured' projects appear on the homepage; the first featured one with a picture or video gets the big slot. All visible projects are on the projects page."
+              blank={{
+                title: "",
+                description: "",
+                tech_stack: [],
+                github_url: null,
+                live_url: null,
+                media_url: null,
+                featured: false,
+                category: "",
+                difficulty: 3,
+                period: "",
+              }}
+              label={(p) => `${p.title}${p.featured ? "  ★ featured" : ""}`}
+              fields={[
+                { key: "title", label: "Title", type: "text" },
+                { key: "description", label: "Description", type: "textarea" },
+                { key: "category", label: "Category", type: "text" },
+                { key: "period", label: "When", type: "text" },
+                { key: "tech_stack", label: "Tech", type: "list" },
+                { key: "github_url", label: "GitHub link", type: "text" },
+                { key: "live_url", label: "Live link", type: "text" },
+                { key: "media_url", label: "Picture or video", type: "media" },
+                { key: "difficulty", label: "Difficulty (1-5, only for you)", type: "number", min: 1, max: 5 },
+                { key: "featured", label: "Featured on the homepage", type: "checkbox" },
+              ]}
+            />
+          )}
+
+          {tab === "interests" && (
+            <CollectionEditor<Interest>
+              path="interests"
+              title="Interests"
+              description="Books, films, music, anything. Grouped by category on the site. Turn the section on under Sections & menu."
+              blank={{ category: "Books", title: "", creator: "", note: "" }}
+              label={(i) => `${i.category}: ${i.title}`}
+              fields={[
+                { key: "category", label: "Category", type: "text", hint: "Items with the same category are grouped together." },
+                { key: "title", label: "Title", type: "text" },
+                { key: "creator", label: "By", type: "text" },
+                { key: "note", label: "A line about it (optional)", type: "textarea" },
+              ]}
+            />
           )}
         </main>
       </div>
 
-      {showProjForm && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 p-4">
-          <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-lg w-full">
-            <h2 className="text-white font-bold mb-4">Add Project</h2>
-            <form
-              className="space-y-4"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const form = new FormData(e.currentTarget);
-                const text = (key: string) => String(form.get(key) ?? "").trim();
-                const newP = {
-                  title: text("title"),
-                  description: text("desc"),
-                  category: text("cat") || "General",
-                  difficulty: Number(text("diff")) || 1,
-                  tech_stack: text("tech")
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean),
-                  github_url: text("github") || null,
-                  featured: form.get("featured") === "on",
-                };
-                const res = await authFetch("/api/projects", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(newP),
-                });
-                if (res.ok) {
-                  const created: Project = await res.json();
-                  setProjects([...projects, created]);
-                  setShowProjForm(false);
-                  setStatus("");
-                } else {
-                  setStatus(`Error: ${await errorText(res)}`);
-                }
-              }}
-            >
-              <input
-                name="title"
-                required
-                placeholder="Title"
-                className="w-full bg-slate-950 p-3 rounded-lg text-white"
-              />
-              <input
-                name="desc"
-                placeholder="Description"
-                className="w-full bg-slate-950 p-3 rounded-lg text-white"
-              />
-              <input
-                name="cat"
-                placeholder="Category"
-                className="w-full bg-slate-950 p-3 rounded-lg text-white"
-              />
-              <input
-                name="diff"
-                type="number"
-                min={1}
-                max={5}
-                defaultValue={3}
-                placeholder="Difficulty (1-5)"
-                className="w-full bg-slate-950 p-3 rounded-lg text-white"
-              />
-              <input
-                name="tech"
-                placeholder="Tech (React, Python)"
-                className="w-full bg-slate-950 p-3 rounded-lg text-white"
-              />
-              <input
-                name="github"
-                type="url"
-                placeholder="GitHub URL (optional)"
-                className="w-full bg-slate-950 p-3 rounded-lg text-white"
-              />
-              <label className="flex items-center gap-2 text-slate-300 text-sm">
-                <input name="featured" type="checkbox" /> Show on homepage
-              </label>
-              {status.startsWith("Error") && (
-                <p className="text-red-400 text-xs">{status}</p>
-              )}
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-cyan-600 py-3 rounded-lg text-white font-bold"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowProjForm(false)}
-                  className="flex-1 bg-slate-800 py-3 rounded-lg text-white"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+      {/* The save bar for settings tabs, stuck to the bottom of the screen. */}
+      {isSettingsTab && draft && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-text/10 bg-surface/95 px-[max(20px,4vw)] py-3 backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="font-mono text-xs text-muted">{dirty ? "Unsaved changes" : message || "All changes saved"}</p>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="danger" onClick={resetToDefaults}>
+                Reset to defaults
+              </Button>
+              <Button onClick={discard} disabled={!dirty}>
+                Discard
+              </Button>
+              <Button variant="primary" onClick={saveSettings} disabled={!dirty}>
+                Save changes
+              </Button>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
-
-export default Admin;

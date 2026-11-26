@@ -1,32 +1,30 @@
-# React + TypeScript + Vite
+# Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The React and TypeScript part of the site. See the README in the repository root for how the whole project fits together, and `docs/FRONTEND_GUIDE.md` for how this code works.
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev      # development server on http://localhost:5173
+npm run build    # type-check and build into dist/
+npm run lint     # oxlint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+It needs `VITE_API_URL` in `frontend/.env`, the address of the backend (for example `http://localhost:8000`).
+
+## Where things are
+
+```
+src/
+  main.tsx              starts React
+  App.tsx               which page to show for which URL
+  auth.ts               talking to the backend, login token helpers
+  types.ts              the shape of the data from the backend
+  index.css             theme variables and a few shared styles
+  site/                 loads the site data and applies the theme
+  components/           pieces of the public pages
+  components/sections/  one component per homepage section
+  pages/                Home, Projects, Tools, Login, Admin
+  admin/                the editors used on the admin page
+  tools/                the tools page; registry.ts lists the tools
+public/assets/          the background video, its poster image, profile photo
+```

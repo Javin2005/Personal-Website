@@ -144,8 +144,8 @@ code { font-family: var(--mono); font-size: 0.92em; }
   <div class="stage">
     <figure>
       <div class="scroller">
-        <svg class="map" id="map" viewBox="0 0 1000 440" role="img"
-             aria-label="System map: the frontend in the browser calls main.py on the backend over HTTP; main.py uses schemas.py, auth.py and database.py, and talks to Postgres, Resend, Cloudinary, GitHub and Spotify.">
+        <svg class="map" id="map" viewBox="0 0 1000 540" role="img"
+             aria-label="System map: the frontend loads all site data from content.py through /api/site and sends admin changes with a login token; main.py handles login, contact and uploads; both check logins with auth.py and input with schemas.py, and store data in Postgres. main.py also talks to Resend, Cloudinary, GitHub and Spotify.">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path class="mk" d="M0,0 L10,5 L0,10 z"></path>
@@ -154,9 +154,9 @@ code { font-family: var(--mono); font-size: 0.92em; }
               <path class="mk-hot" d="M0,0 L10,5 L0,10 z"></path>
             </marker>
           </defs>
-          <rect class="band front" x="20" y="16" width="240" height="414" rx="10"></rect>
-          <rect class="band back" x="300" y="16" width="420" height="414" rx="10"></rect>
-          <rect class="band out" x="760" y="16" width="222" height="414" rx="10"></rect>
+          <rect class="band front" x="20" y="16" width="240" height="514" rx="10"></rect>
+          <rect class="band back" x="300" y="16" width="420" height="514" rx="10"></rect>
+          <rect class="band out" x="760" y="16" width="222" height="514" rx="10"></rect>
           <text class="band-label" x="40" y="42">FRONTEND · in the browser</text>
           <text class="band-label" x="320" y="42">BACKEND · Python on Render</text>
           <text class="band-label" x="780" y="42">OUTSIDE SERVICES</text>
@@ -164,7 +164,7 @@ code { font-family: var(--mono); font-size: 0.92em; }
           <g id="nodes"></g>
         </svg>
       </div>
-      <figcaption>Arrows point the way the request travels. Every answer comes back along the same arrow. The frontend never talks to the database directly: everything goes through <code>main.py</code>.</figcaption>
+      <figcaption>Arrows point the way the request travels. Every answer comes back along the same arrow. The frontend never talks to the database directly: everything goes through the backend. The unlabeled line on the left is pages reading data with <code>useSite()</code>.</figcaption>
     </figure>
 
     <aside class="panel" id="panel" aria-live="polite"></aside>
@@ -181,7 +181,7 @@ code { font-family: var(--mono); font-size: 0.92em; }
       <div>
         <h3>Render</h3>
         <span class="k">runs Python 24/7 · free tier 512 MB RAM</span>
-        <p>Gunicorn starts several copies ("workers") of your FastAPI app. Each worker loads all of Python, FastAPI, SQLAlchemy and the Cloudinary SDK into memory, so more workers means more RAM. This is the only place your code runs on a server.</p>
+        <p>Gunicorn starts copies ("workers") of the FastAPI app, and each one holds all of Python, FastAPI and SQLAlchemy in memory. Use two workers on the free plan. On startup the app updates the database structure with Alembic. This is the only place your code runs on a server.</p>
       </div>
       <div>
         <h3>Supabase · Resend · Cloudinary</h3>
@@ -195,247 +195,247 @@ code { font-family: var(--mono); font-size: 0.92em; }
 <script>
 const NODES = {
   vercel:  { x: 40,  y: 60,  w: 200, t: "Vercel",             s: "hands out built files" },
-  pages:   { x: 40,  y: 160, w: 200, t: "Pages & components", s: "pages/*.tsx" },
-  authts:  { x: 40,  y: 260, w: 200, t: "auth.ts",            s: "token helpers" },
-  storage: { x: 40,  y: 360, w: 200, t: "localStorage",       s: "saved login token" },
-  schemas: { x: 320, y: 60,  w: 180, t: "schemas.py",         s: "checks incoming data" },
-  main:    { x: 320, y: 160, w: 180, t: "main.py",            s: "every API endpoint" },
+  pages:   { x: 40,  y: 160, w: 200, t: "Pages & components", s: "pages/, components/" },
+  authts:  { x: 40,  y: 260, w: 200, t: "auth.ts",            s: "requests + login token" },
+  site:    { x: 40,  y: 360, w: 200, t: "SiteContext",        s: "site data + theme" },
+  storage: { x: 40,  y: 460, w: 200, t: "localStorage",       s: "token, cached site" },
+  main:    { x: 320, y: 160, w: 180, t: "main.py",            s: "login, contact, media" },
   authpy:  { x: 320, y: 260, w: 180, t: "auth.py",            s: "passwords + JWT" },
-  db:      { x: 530, y: 360, w: 170, t: "database.py",        s: "+ models.py tables" },
+  content: { x: 320, y: 360, w: 180, t: "content.py",         s: "settings + lists" },
+  schemas: { x: 530, y: 60,  w: 170, t: "schemas.py",         s: "checks input" },
+  db:      { x: 530, y: 460, w: 170, t: "database.py",        s: "models + migrations" },
   resend:  { x: 780, y: 60,  w: 180, t: "Resend",             s: "sends you email" },
-  cloud:   { x: 780, y: 160, w: 180, t: "Cloudinary",         s: "stores Life photos" },
-  apis:    { x: 780, y: 260, w: 180, t: "GitHub + Spotify",   s: "status bar data" },
-  pg:      { x: 780, y: 360, w: 180, t: "Postgres",           s: "Supabase · the data" },
+  cloud:   { x: 780, y: 160, w: 180, t: "Cloudinary",         s: "images + videos" },
+  apis:    { x: 780, y: 260, w: 180, t: "GitHub + Spotify",   s: "footer status line" },
+  pg:      { x: 780, y: 460, w: 180, t: "Postgres",           s: "Supabase · the data" },
 };
 
 const EDGES = {
-  "vercel-pages":  { d: "M140,116 V158", lx: 150, ly: 141, a: "start",  l: "JS + HTML, once" },
-  "pages-authts":  { d: "M140,216 V258", lx: 150, ly: 241, a: "start",  l: "uses helpers" },
-  "authts-storage":{ d: "M140,316 V358", lx: 150, ly: 341, a: "start",  l: "read / save token" },
-  "pages-main":    { d: "M240,186 H318", lx: 280, ly: 178, a: "middle", l: "HTTP" },
-  "authts-main":   { d: "M240,288 L318,206", lx: 288, ly: 262, a: "middle", l: "+ token" },
-  "main-schemas":  { d: "M410,160 V118", lx: 420, ly: 143, a: "start",  l: "validate" },
-  "main-authpy":   { d: "M410,216 V258", lx: 420, ly: 241, a: "start",  l: "check login" },
-  "main-db":       { d: "M500,210 L612,358", lx: 566, ly: 270, a: "start",  l: "query" },
-  "db-pg":         { d: "M700,388 H778", lx: 740, ly: 380, a: "middle", l: "SQL" },
-  "main-resend":   { d: "M500,172 L778,92",  lx: 640, ly: 122, a: "middle", l: "send email" },
-  "main-cloud":    { d: "M500,188 H778", lx: 640, ly: 180, a: "middle", l: "upload image" },
-  "main-apis":     { d: "M500,204 L778,286", lx: 640, ly: 238, a: "middle", l: "fetch status" },
+  "vercel-pages":   { d: "M140,116 V158", lx: 150, ly: 141, a: "start", l: "JS + HTML, once" },
+  "pages-authts":   { d: "M140,216 V258", lx: 150, ly: 241, a: "start", l: "admin requests" },
+  "pages-site":     { d: "M40,206 H28 V382 H38", lx: 0, ly: 0, a: "start", l: "" },
+  "site-storage":   { d: "M140,416 V458", lx: 150, ly: 441, a: "start", l: "cache" },
+  "authts-storage": { d: "M240,304 H254 V488 H242", lx: 0, ly: 0, a: "start", l: "" },
+  "pages-main":     { d: "M240,186 H318", lx: 280, ly: 178, a: "middle", l: "contact" },
+  "authts-main":    { d: "M240,278 L318,206", lx: 290, ly: 232, a: "middle", l: "+ token" },
+  "authts-content": { d: "M240,298 L318,372", lx: 290, ly: 346, a: "middle", l: "+ token" },
+  "site-content":   { d: "M240,396 H318", lx: 280, ly: 412, a: "middle", l: "/api/site" },
+  "main-authpy":    { d: "M410,216 V258", lx: 420, ly: 241, a: "start", l: "check login" },
+  "content-authpy": { d: "M410,360 V318", lx: 420, ly: 343, a: "start", l: "check login" },
+  "main-schemas":   { d: "M500,176 L560,118", lx: 538, ly: 140, a: "start", l: "validate" },
+  "content-schemas":{ d: "M500,372 L640,118", lx: 590, ly: 236, a: "start", l: "validate" },
+  "content-db":     { d: "M480,416 V488 H528", lx: 488, ly: 450, a: "start", l: "query" },
+  "main-db":        { d: "M500,206 H514 V470 H528", lx: 0, ly: 0, a: "start", l: "" },
+  "db-pg":          { d: "M700,488 H778", lx: 740, ly: 480, a: "middle", l: "SQL" },
+  "main-resend":    { d: "M500,168 H730 V90 H778", lx: 736, ly: 136, a: "start", l: "email" },
+  "main-cloud":     { d: "M500,188 H778", lx: 735, ly: 180, a: "middle", l: "upload" },
+  "main-apis":      { d: "M500,200 L778,282", lx: 735, ly: 258, a: "middle", l: "status.py" },
 };
 
 const NODE_INFO = {
   vercel: {
     where: "Hosting · frontend/dist after npm run build",
-    text: "Vercel stores the built frontend and sends it to each visitor. That's all it does. There is no server process of yours on Vercel. vercel.json tells it to answer every URL (like /admin) with index.html so React Router can take over.",
+    text: "Vercel stores the built frontend and the black hole video and sends them to each visitor. No code of yours runs there. vercel.json tells it to answer every URL (like /projects) with index.html so React Router can pick the page.",
     code: `// frontend/vercel.json
 { "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }`,
   },
   pages: {
-    where: "frontend/src/App.tsx · pages/ · components/",
-    text: "App.tsx maps URLs to pages. Each page starts empty, then a useEffect asks the backend for data and stores it with useState. Changing state makes React redraw the page.",
-    code: `const [projects, setProjects] = useState<Project[]>([]);
-useEffect(() => {
-  fetch(\`\${API_URL}/api/projects/featured\`)
-    .then((res) => res.json())
-    .then((data) => setProjects(data));
-}, []);`,
+    where: "frontend/src/pages · components · components/sections",
+    text: "App.tsx maps URLs to pages. Home draws the hero and then one component per visible section, in the order saved in the settings. None of the text is in the code; every section reads it with useSite().",
+    code: `const visible = site.settings.sections.filter((s) => s.visible);
+return visible.map((section) => {
+  const Component = SECTIONS[section.id];
+  return <Component key={section.id} section={section} />;
+});`,
   },
   authts: {
     where: "frontend/src/auth.ts",
-    text: "Small helpers so every page handles the login token the same way. authFetch adds the token to a request and sends you to /login if the backend answers 401.",
-    code: `export async function authFetch(path, options = {}) {
-  const res = await fetch(\`\${API_URL}\${path}\`, {
-    ...options,
-    headers: { ...options.headers,
-      Authorization: \`Bearer \${getToken()}\` },
-  });
-  if (res.status == 401) { logout(); window.location.href = "/login"; }
-  return res;
+    text: "Helpers for talking to the backend. authFetch adds the login token; sendJson sends JSON and turns the backend's error into readable text; uploadMedia sends a file to /api/media.",
+    code: `export async function sendJson(path, method, body) {
+  const res = await authFetch(path, { method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(await errorText(res));
+  return res.json();
 }`,
+  },
+  site: {
+    where: "frontend/src/site/SiteContext.tsx · theme.ts",
+    text: "Loads everything the public pages need with one request and shares it with every component. It shows the cached copy from the last visit first, so the page appears at once even while Render wakes up. It also turns the saved colors and fonts into CSS variables.",
+    code: `const [site, setSite] = useState(() => readCache() ?? EMPTY_SITE);
+useEffect(() => { reload(); }, [reload]);           // fetch /api/site
+useEffect(() => { applyTheme(site.settings.theme); }, [site.settings.theme]);`,
   },
   storage: {
     where: "Browser storage, per site",
-    text: "The JWT token is kept here after you log in, so you stay logged in across page reloads for 24 hours. Anyone with this token is treated as admin until it expires, which is why it expires.",
-    code: `localStorage.setItem("token", data.access_token);  // Login.tsx
-localStorage.getItem("token");                     // auth.ts`,
-  },
-  schemas: {
-    where: "backend/app/schemas.py",
-    text: "Describes the shape of data the API accepts. FastAPI checks every request body against these before your function runs. Bad input never reaches the database: the caller gets a 422 error listing what's wrong.",
-    code: `class ProjectCreate(BaseModel):
-    title: str = Field(min_length=1, max_length=200)
-    difficulty: int = Field(default=1, ge=1, le=5)
-    github_url: Optional[str] = None   # must be http(s)`,
+    text: "Holds two things: the login token (so you stay logged in for 24 hours) and a copy of the last site data, used to draw the page instantly on the next visit.",
+    code: `localStorage.setItem("token", data.access_token);       // Login.tsx
+localStorage.setItem("site-cache-v1", JSON.stringify(data)); // SiteContext`,
   },
   main: {
     where: "backend/app/main.py",
-    text: "The actual server. Each @app.get / @app.post / @app.put / @app.delete is one URL the frontend can call. Depends(...) runs a helper first: get_session opens a database connection, and get_current_user is the lock on admin-only endpoints.",
-    code: `@app.delete("/api/projects/{project_id}")
-def delete_project(project_id: int,
-                   session = Depends(get_session),
-                   admin = Depends(get_current_user)):   # the lock
-    ...`,
+    text: "Creates the FastAPI app, runs the migrations on startup, and holds the endpoints that aren't content: login, the contact form, about, and media uploads to Cloudinary. It also plugs in the routers from content.py and status.py.",
+    code: `@asynccontextmanager
+async def lifespan(app):
+    run_migrations()        # alembic upgrade head
+    ensure_settings_row()
+    yield`,
   },
   authpy: {
     where: "backend/app/auth.py",
-    text: "Passwords are stored only as bcrypt hashes. On login it creates a JWT signed with SECRET_KEY. On every admin request it checks the signature. Nobody can forge one without SECRET_KEY, which only the server knows.",
+    text: "Passwords are stored only as bcrypt hashes. Login creates a JWT signed with SECRET_KEY. Every admin endpoint depends on get_current_user, which checks that signature and answers 401 if it's missing, forged or expired.",
     code: `def get_current_user(token = Depends(oauth2_scheme)):
     payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-    return payload["sub"]   # bad/expired token -> 401`,
+    return payload["sub"]`,
+  },
+  content: {
+    where: "backend/app/content.py",
+    text: "The editable content. /api/site returns everything at once. /api/settings is the one JSON row with colors, fonts, hero text and section order. collection_router creates the same six endpoints for each list: projects, experience, education, skills, interests.",
+    code: `COLLECTIONS = [
+    ("projects", Project, ProjectIn),
+    ("experience", Experience, ExperienceIn),
+    ...
+]
+collection_routers = [collection_router(*c) for c in COLLECTIONS]`,
+  },
+  schemas: {
+    where: "backend/app/schemas.py",
+    text: "Describes what the API accepts. Colors must be #rrggbb, fonts must come from a fixed list, links must be http(s). That keeps anything harmful out of the CSS and the page. Bad input gets a 422 listing what's wrong.",
+    code: `class Theme(BaseModel):
+    accent: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
+    fontDisplay: str          # must be in FONTS`,
   },
   db: {
-    where: "backend/app/database.py · models.py",
-    text: "models.py describes each table as a Python class (Project, About, LifePost, User…). database.py connects to DATABASE_URL: Postgres in production, a local SQLite file when you develop.",
-    code: `class Project(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    title: str
-    tech_stack: List[str] = Field(sa_column=Column(JSON))
-    featured: bool = False`,
+    where: "backend/app/database.py · models.py · migrations/",
+    text: "models.py describes the tables. The Alembic migrations in migrations/versions change the live database's structure (new tables, new columns) without losing data, and run by themselves when the server starts.",
+    code: `class Experience(SQLModel, table=True):
+    role: str
+    organisation: str
+    period: str = ""
+    sort_order: int = 0
+    visible: bool = True`,
   },
   resend: {
     where: "Called from /api/contact",
-    text: "An email-sending service. The backend hands it the escaped message plus your secret API key, and Resend delivers it to your inbox. reply_to is the visitor's address, so you can just hit Reply.",
-    code: `resend.Emails.send({
-    "from": "onboarding@resend.dev",
-    "to": "...", "reply_to": form_data.email,
-    "html": f"<p>{message}</p>" })`,
+    text: "Delivers contact form messages to your inbox. reply_to is the visitor's address, so you can just hit Reply.",
+    code: `resend.Emails.send({ "to": "...", "reply_to": form_data.email, ... })`,
   },
   cloud: {
-    where: "Called from POST/DELETE /api/life",
-    text: "Stores the Life photos. The backend uploads the file and saves only the returned URL in the database. Browsers then load the image straight from Cloudinary's CDN. Deleting a post now also deletes the file there.",
-    code: `upload_result = await run_in_threadpool(
-    cloudinary.uploader.upload, contents, resource_type="image")
-new_post.image_url = upload_result["secure_url"]`,
+    where: "Called from POST /api/media",
+    text: "Stores images and videos you upload from the admin page (project media, profile picture, a new background video). The backend uploads the file and returns the URL, which you then save like any other field.",
+    code: `result = await run_in_threadpool(
+    cloudinary.uploader.upload, file.file, resource_type=kind)
+return {"url": result["secure_url"]}`,
   },
   apis: {
-    where: "Called from /api/status/github and /api/status/spotify",
-    text: "The status bar shows your latest commit and current song. The backend makes these calls with your private tokens, and now caches the answers (GitHub 5 min, Spotify 25 s) so many visitors don't burn through GitHub's rate limit.",
+    where: "backend/app/status.py",
+    text: "The footer's 'last commit' and 'listening to' line. The backend calls GitHub and Spotify with your private tokens and caches the answers (5 minutes and 25 seconds), so many visitors cost almost nothing.",
     code: `hit = cached("github", 300)
 if hit is not None:
-    return hit
-return remember("github", await _fetch_github_status())`,
+    return hit`,
   },
   pg: {
     where: "Supabase (cloud Postgres)",
-    text: "Where the data actually lives. It survives restarts and redeploys of the backend. Only the backend has the connection string (DATABASE_URL), so the only way in from the internet is through your API's rules.",
-    code: `SELECT * FROM project WHERE featured = true;`,
+    text: "Where the data lives: settings, about, projects, experience, education, skills, interests and the admin user. Only the backend has the connection string.",
+    code: `SELECT * FROM experience WHERE visible ORDER BY sort_order;`,
   },
 };
 
 const FLOWS = [
   { id: "home", name: "Visitor opens the homepage", steps: [
     { n: ["vercel","pages"], e: ["vercel-pages"], h: "The browser downloads the app",
-      t: "The visitor types your URL. Vercel sends index.html, one JavaScript bundle, the CSS and the black hole video. No Python runs yet.",
+      t: "Vercel sends index.html, one JavaScript bundle, the CSS and the poster image for the video.",
       c: `dist/index.html
-dist/assets/index-*.js    (all of React + your pages)
-assets/BlackHole_preview.mp4` },
-    { n: ["pages"], e: [], h: "React draws an empty page",
-      t: "main.tsx mounts App, the router picks Home for '/', and Home renders with empty state. Then its useEffect fires.",
-      c: `<Route path="/" element={<Home />} />` },
-    { n: ["pages","main"], e: ["pages-main"], h: "Home asks the backend for data",
-      t: "Three HTTP GET requests go to Render: featured projects, about, creative. These need no login, so no token is attached.",
-      c: `GET https://<backend>/api/projects/featured
-GET https://<backend>/api/about
-GET https://<backend>/api/creative` },
-    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "The backend reads the database",
-      t: "FastAPI finds the function for that URL, gets a database session, and runs the query.",
-      c: `statement = select(Project).where(Project.featured == True)
-projects = session.exec(statement).all()` },
-    { n: ["pages","main"], e: ["pages-main"], h: "JSON comes back and the page fills in",
-      t: "FastAPI turns the rows into JSON. setProjects stores them, React redraws, and the cards appear.",
-      c: `[{"id": 1, "title": "Black hole renderer",
-  "tech_stack": ["C++", "OpenGL"], "featured": true, ...}]` },
+dist/assets/index-*.js
+assets/blackhole-poster.jpg  → then assets/blackhole.mp4` },
+    { n: ["site","storage","pages"], e: ["site-storage","pages-site"], h: "Draw from the cache right away",
+      t: "SiteProvider looks for the content this browser saw last time. If it finds it, the whole page is drawn immediately. A first-time visitor sees the built-in defaults instead.",
+      c: `useState(() => readCache() ?? EMPTY_SITE)` },
+    { n: ["site","content"], e: ["site-content"], h: "Ask for fresh content",
+      t: "One request to /api/site. On the free plan the server may be asleep and take up to a minute; the cached page is already showing, so the visitor doesn't notice.",
+      c: `GET https://<backend>/api/site` },
+    { n: ["content","db","pg"], e: ["content-db","db-pg"], h: "Collect everything",
+      t: "content.py reads the settings row and every visible item of each list, in the saved order.",
+      c: `return {
+    "settings": get_settings(session),
+    "experience": visible(Experience),
+    "projects": visible(Project), ... }` },
+    { n: ["site","pages","storage"], e: ["pages-site","site-storage"], h: "Redraw and remember",
+      t: "React redraws the sections with the fresh data, the theme is applied as CSS variables, and the result is cached for next time.",
+      c: `setSite(data);
+localStorage.setItem(CACHE_KEY, JSON.stringify(data));` },
   ]},
-  { id: "login", name: "You log in", steps: [
-    { n: ["pages","main"], e: ["pages-main"], h: "Login.tsx sends username + password",
-      t: "Sent as form data to /api/token. The backend allows at most 5 attempts per minute per IP.",
-      c: `POST /api/token
-username=...&password=...` },
-    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "Look up the user",
-      t: "The backend finds the User row by username. The row only holds a bcrypt hash, never the real password.",
-      c: `user = session.exec(select(User).where(User.username == form_data.username)).first()` },
-    { n: ["main","authpy"], e: ["main-authpy"], h: "Check password, sign a token",
-      t: "bcrypt checks the typed password against the hash. If it matches, auth.py creates a JWT containing your username and an expiry time, signed with SECRET_KEY.",
-      c: `if not user or not verify_password(form_data.password, user.hashed_password):
-    raise HTTPException(400, "Incorrect username or password")
-return {"access_token": create_access_token({"sub": user.username})}` },
-    { n: ["pages","authts","storage"], e: ["pages-authts","authts-storage"], h: "The browser keeps the token",
-      t: "Login.tsx saves the token in localStorage. From now on isLoggedIn() returns true (until it expires) and the Navbar shows Admin.",
-      c: `localStorage.setItem("token", data.access_token);
-navigate("/");` },
-  ]},
-  { id: "edit", name: "You edit your profile in Admin", steps: [
-    { n: ["pages","authts","storage"], e: ["pages-authts","authts-storage"], h: "Admin uses authFetch",
-      t: "You press Commit Changes. Admin.tsx calls authFetch, which reads the token from localStorage.",
-      c: `await authFetch("/api/about", { method: "PUT",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(about) });` },
-    { n: ["authts","main"], e: ["authts-main"], h: "The request carries the token",
-      t: "The token goes in the Authorization header. Hiding the Admin page in React is only cosmetic. This header is what actually proves who you are.",
-      c: `PUT /api/about
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...` },
-    { n: ["main","authpy"], e: ["main-authpy"], h: "The lock: get_current_user",
-      t: "Before update_about runs, FastAPI runs get_current_user. A missing, forged or expired token stops the request here with 401.",
-      c: `def update_about(updated_about: AboutUpdate,
-                 session = Depends(get_session),
-                 admin = Depends(get_current_user)):` },
-    { n: ["main","schemas"], e: ["main-schemas"], h: "The data is validated",
-      t: "The body must match AboutUpdate: name not empty, links must be http(s), and so on. Otherwise FastAPI answers 422 and Admin shows the error.",
-      c: `class AboutUpdate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    socials: List[SocialLink]   # url must be http(s)` },
-    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "Saved",
-      t: "The existing About row is updated and committed. Next time anyone loads the homepage, they get the new text.",
-      c: `for key, value in about_data.items():
-    setattr(db_about, key, value)
+  { id: "theme", name: "You change a color in Admin", steps: [
+    { n: ["pages","site"], e: ["pages-site"], h: "A live preview",
+      t: "On the Appearance tab every change goes into a draft and is applied to the admin page at once with applyTheme. Nothing is saved yet.",
+      c: `useEffect(() => { if (draft) applyTheme(draft.theme); }, [draft]);` },
+    { n: ["pages","authts","content"], e: ["pages-authts","authts-content"], h: "Save changes",
+      t: "The whole settings draft is sent with your login token.",
+      c: `await sendJson("/api/settings", "PUT", draft);` },
+    { n: ["content","authpy"], e: ["content-authpy"], h: "Is it really you?",
+      t: "get_current_user checks the token's signature before save_settings runs.",
+      c: `def save_settings(data: SettingsData, ..., admin = Depends(get_current_user)):` },
+    { n: ["content","schemas"], e: ["content-schemas"], h: "Is it a real color?",
+      t: "SettingsData checks every field. 'red;} body {display:none' is not #rrggbb, so it's rejected with 422 and the admin page shows why.",
+      c: `accent: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")` },
+    { n: ["content","db","pg"], e: ["content-db","db-pg"], h: "Saved for everyone",
+      t: "The settings row is replaced. The next /api/site request, from any visitor, carries the new color.",
+      c: `row.data = data.model_dump()
 session.commit()` },
   ]},
+  { id: "list", name: "You add an experience entry", steps: [
+    { n: ["pages","authts","content"], e: ["pages-authts","authts-content"], h: "Add new → Add",
+      t: "CollectionEditor sends the new item to the collection's path. The same editor component is used for projects, education, skills and interests.",
+      c: `await sendJson("/api/experience", "POST", draft);` },
+    { n: ["content","authpy","schemas"], e: ["content-authpy","content-schemas"], h: "Checked twice",
+      t: "First the login, then ExperienceIn: role and organisation required, lengths limited, empty tags removed.",
+      c: `class ExperienceIn(BaseModel):
+    role: str = Field(min_length=1, max_length=150)` },
+    { n: ["content","db","pg"], e: ["content-db","db-pg"], h: "Put at the end",
+      t: "The new row gets sort_order one higher than the current last one. The ↑ ↓ buttons later send the full new order of ids.",
+      c: `last = session.exec(select(func.max(model.sort_order))).one()
+item = model(**data.model_dump(), sort_order=(last or 0) + 1)` },
+  ]},
+  { id: "login", name: "You log in", steps: [
+    { n: ["pages","main"], e: ["pages-main"], h: "Username and password",
+      t: "Login.tsx sends them as form data to /api/token. At most 5 tries per minute per IP.",
+      c: `POST /api/token
+username=...&password=...` },
+    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "Find the user",
+      t: "The User row only holds a bcrypt hash, never the password.",
+      c: `user = session.exec(select(User).where(User.username == ...)).first()` },
+    { n: ["main","authpy"], e: ["main-authpy"], h: "Check and sign",
+      t: "bcrypt compares the password with the hash. If it matches, auth.py signs a token that is valid for 24 hours.",
+      c: `return {"access_token": create_access_token({"sub": user.username})}` },
+    { n: ["pages","authts","storage"], e: ["pages-authts","authts-storage"], h: "Keep the token",
+      t: "The token is saved in localStorage and you land on /admin. The nav now shows Admin and Sign out.",
+      c: `localStorage.setItem("token", data.access_token);
+navigate("/admin");` },
+  ]},
   { id: "contact", name: "Someone sends a message", steps: [
-    { n: ["pages","main"], e: ["pages-main"], h: "Contact.tsx posts the form",
-      t: "Sent as JSON. The limiter allows 3 per minute per IP; a 4th gets HTTP 429 and the form says to wait.",
+    { n: ["pages","main"], e: ["pages-main"], h: "The form is posted",
+      t: "3 messages per minute per IP. A fourth gets 429 and the form asks them to wait.",
       c: `POST /api/contact
 {"name": "Ada", "email": "ada@example.com", "message": "Hi!"}` },
-    { n: ["main"], e: [], h: "Validated and escaped",
-      t: "ContactForm checks lengths and that the email looks real. html.escape turns any <script> into harmless text before it goes into the email.",
-      c: `class ContactForm(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    email: EmailStr
-    message: str = Field(min_length=1, max_length=5000)` },
-    { n: ["main","resend"], e: ["main-resend"], h: "Resend delivers the email",
-      t: "The backend calls Resend with its secret API key. Nothing is saved in your database. The message only exists in your inbox.",
-      c: `resend.Emails.send({ "to": "...", "reply_to": form_data.email, ... })` },
+    { n: ["main","resend"], e: ["main-resend"], h: "Escaped and emailed",
+      t: "ContactForm checks the fields, html.escape makes any HTML harmless, and Resend delivers it. Nothing is stored in the database.",
+      c: `message = html.escape(form_data.message)
+resend.Emails.send({ ... })` },
   ]},
-  { id: "life", name: "You upload a Life photo", steps: [
-    { n: ["pages","authts","main"], e: ["pages-authts","authts-main"], h: "The file is sent with the token",
-      t: "Life.tsx builds a FormData (text fields + the image file) and sends it with authFetch.",
-      c: `formData.append("image", selectedFile);
-await authFetch("/api/life", { method: "POST", body: formData });` },
-    { n: ["main","authpy"], e: ["main-authpy"], h: "Logged in? Real image? Under 10 MB?",
-      t: "The token check runs first. Then the backend rejects anything that isn't an image or is too large, before spending time on the upload.",
-      c: `if not image.content_type.startswith("image/"):
-    raise HTTPException(400, "File must be an image")` },
-    { n: ["main","cloud"], e: ["main-cloud"], h: "Uploaded to Cloudinary",
-      t: "Your server's disk on Render is wiped on every redeploy, so images live on Cloudinary. You get back a permanent URL.",
-      c: `upload_result = cloudinary.uploader.upload(contents)
-url = upload_result["secure_url"]` },
-    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "Only the URL is saved",
-      t: "The database row stores the title, caption and the Cloudinary URL. Visitors' browsers load the picture straight from Cloudinary.",
-      c: `LifePost(title=..., caption=..., image_url=url)` },
-  ]},
-  { id: "status", name: "The status bar updates", steps: [
-    { n: ["pages","main"], e: ["pages-main"], h: "Polling every 30 seconds",
-      t: "StatusBar asks for GitHub and Spotify status when the page loads and then every 30 s, but only while the tab is visible.",
-      c: `const interval = setInterval(fetchData, 30000);
-if (document.hidden) return;` },
-    { n: ["main"], e: [], h: "Cache check",
-      t: "If the backend asked GitHub less than 5 minutes ago, it reuses that answer. A hundred visitors cost one GitHub call, not hundreds.",
-      c: `hit = cached("github", 300)
-if hit is not None: return hit` },
-    { n: ["main","apis"], e: ["main-apis"], h: "Ask GitHub and Spotify",
-      t: "On a cache miss the backend calls GitHub (latest push) and Spotify (refreshes an access token, then asks what's playing) using your private tokens.",
-      c: `GET https://api.github.com/users/<you>/events
-POST https://accounts.spotify.com/api/token  (refresh)
-GET https://api.spotify.com/v1/me/player/currently-playing` },
+  { id: "upload", name: "You upload a project video", steps: [
+    { n: ["pages","authts","main"], e: ["pages-authts","authts-main"], h: "Pick a file",
+      t: "MediaField sends the file to /api/media with your token.",
+      c: `const url = await uploadMedia(file);` },
+    { n: ["main","authpy"], e: ["main-authpy"], h: "Checks",
+      t: "Logged in? An image, or an .mp4/.webm video? Under 10 MB for images, 40 MB for video?",
+      c: `elif content_type in ("video/mp4", "video/webm"):
+    kind, limit = "video", MAX_VIDEO_BYTES` },
+    { n: ["main","cloud"], e: ["main-cloud"], h: "Off to Cloudinary",
+      t: "FastAPI keeps large uploads in a temporary file, which is passed straight on, so a big video never sits in the server's 512 MB of memory.",
+      c: `cloudinary.uploader.upload(file.file, resource_type="video")` },
+    { n: ["pages"], e: [], h: "Save the URL",
+      t: "The returned URL fills the 'Picture or video' field. Pressing Save stores it on the project like any other text.",
+      c: `https://res.cloudinary.com/<cloud>/video/upload/v1/abc.mp4` },
   ]},
 ];
 
@@ -454,6 +454,7 @@ for (const [id, e] of Object.entries(EDGES)) {
   el("path", { d: e.d, "marker-end": "url(#arrow)" }, g);
   const t = el("text", { x: e.lx, y: e.ly, "text-anchor": e.a }, g);
   t.textContent = e.l;
+  if (!e.l) t.remove();
   edgeEls[id] = g;
 }
 for (const [id, n] of Object.entries(NODES)) {
