@@ -1,9 +1,11 @@
+import { useLabels } from "../../site/labels";
 import { useSite } from "../../site/useSite";
 import type { SectionSettings } from "../../types";
 import Section from "./Section";
 
 export default function EducationSection({ section }: { section: SectionSettings }) {
   const { site } = useSite();
+  const t = useLabels();
   if (site.education.length === 0) return null;
 
   return (
@@ -28,7 +30,7 @@ export default function EducationSection({ section }: { section: SectionSettings
               {school.notes && <p className="max-w-[62ch] font-light text-text/80">{school.notes}</p>}
               {school.courses.length > 0 && (
                 <div className="grid gap-3 pt-2">
-                  <p className="font-mono text-xs tracking-[0.06em] text-muted uppercase">Completed courses</p>
+                  <p className="font-mono text-xs tracking-[0.06em] text-muted uppercase">{t("completedCourses")}</p>
                   <ul className="grid gap-x-8 gap-y-1.5 text-sm text-text/85 sm:grid-cols-2">
                     {school.courses.map((course) => (
                       <li key={course}>{course}</li>

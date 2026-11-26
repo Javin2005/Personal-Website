@@ -53,6 +53,14 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     reload();
   }, [reload]);
 
+  // The browser tab title and the description search engines show.
+  useEffect(() => {
+    const { siteTitle, siteDescription } = site.settings;
+    if (siteTitle) document.title = siteTitle;
+    if (siteDescription)
+      document.querySelector('meta[name="description"]')?.setAttribute("content", siteDescription);
+  }, [site.settings]);
+
   // Whenever the theme changes, push it into the CSS variables.
   useEffect(() => {
     applyTheme(site.settings.theme);

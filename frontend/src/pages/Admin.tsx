@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AboutEditor from "../admin/AboutEditor";
+import ApiKeysEditor from "../admin/ApiKeysEditor";
 import CollectionEditor from "../admin/CollectionEditor";
 import { Button } from "../admin/fields";
-import { AppearanceTab, HeroTab, LayoutTab } from "../admin/SettingsEditors";
+import { AppearanceTab, HeroTab, LabelsTab, LayoutTab } from "../admin/SettingsEditors";
 import { API_URL, isLoggedIn, logout, sendJson } from "../auth";
 import { useSite } from "../site/useSite";
 import { applyTheme } from "../site/theme";
@@ -13,16 +14,18 @@ const TABS = [
   { id: "appearance", label: "Appearance", group: "Settings" },
   { id: "hero", label: "Hero", group: "Settings" },
   { id: "layout", label: "Sections & menu", group: "Settings" },
+  { id: "labels", label: "Labels", group: "Settings" },
   { id: "about", label: "About", group: "Content" },
   { id: "skills", label: "Skills", group: "Content" },
   { id: "experience", label: "Experience", group: "Content" },
   { id: "education", label: "Education", group: "Content" },
   { id: "projects", label: "Projects", group: "Content" },
   { id: "interests", label: "Interests", group: "Content" },
+  { id: "apikeys", label: "API keys", group: "Access" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
-const SETTINGS_TABS: TabId[] = ["appearance", "hero", "layout"];
+const SETTINGS_TABS: TabId[] = ["appearance", "hero", "layout", "labels"];
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -115,7 +118,7 @@ export default function Admin() {
 
       <div className="grid gap-10 px-[max(20px,4vw)] py-10 md:grid-cols-[13rem_minmax(0,1fr)]">
         <nav className="md:sticky md:top-24 md:self-start">
-          {["Settings", "Content"].map((group) => (
+          {["Settings", "Content", "Access"].map((group) => (
             <div key={group} className="mb-6">
               <p className="mb-2 font-mono text-xs tracking-[0.06em] text-muted uppercase">{group}</p>
               <ul className="flex flex-wrap gap-1 md:grid">
@@ -144,12 +147,14 @@ export default function Admin() {
                 {tab === "appearance" && <AppearanceTab draft={draft} setDraft={setDraft} />}
                 {tab === "hero" && <HeroTab draft={draft} setDraft={setDraft} />}
                 {tab === "layout" && <LayoutTab draft={draft} setDraft={setDraft} />}
+                {tab === "labels" && <LabelsTab draft={draft} setDraft={setDraft} />}
               </div>
             ) : (
               <p className="text-sm text-muted">{message || "Loading settings…"}</p>
             ))}
 
           {tab === "about" && <AboutEditor />}
+          {tab === "apikeys" && <ApiKeysEditor />}
 
           {tab === "skills" && (
             <CollectionEditor<SkillGroup>

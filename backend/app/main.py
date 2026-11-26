@@ -22,7 +22,8 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlmodel import Session, select
 
-from .auth import create_access_token, get_current_user, verify_password
+from .apikeys import router as apikeys_router
+from .auth import DUMMY_HASH, create_access_token, get_current_user, verify_password
 from .content import collection_routers, ensure_settings_row
 from .content import router as content_router
 from .database import get_session, run_migrations
@@ -88,6 +89,7 @@ app.include_router(content_router)
 for r in collection_routers:
     app.include_router(r)
 app.include_router(status_router)
+app.include_router(apikeys_router)
 
 
 @app.get("/")
@@ -192,7 +194,10 @@ async def upload_media(file: UploadFile = File(...), admin: str = Depends(get_cu
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.username == form_data.username)).first()
 
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    # Check a password even when the user doesn't exist, so the response
+    # time doesn't reveal which usernames are real.
+    password_ok = verify_password(form_data.password, user.hashed_password if user else DUMMY_HASH)
+    if not user or not password_ok:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
     access_token = create_access_token(data={"sub": user.username})

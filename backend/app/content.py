@@ -114,7 +114,7 @@ def get_settings(session: Session) -> dict:
     row = session.get(SiteSettings, 1)
     saved = row.data if row and row.data else {}
     merged = {**DEFAULT_SETTINGS, **saved}
-    for key in ("theme", "video", "hero"):
+    for key in ("theme", "video", "hero", "labels"):
         merged[key] = {**DEFAULT_SETTINGS[key], **saved.get(key, {})}
     return merged
 

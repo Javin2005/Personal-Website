@@ -1,4 +1,5 @@
 import { HashLink } from "react-router-hash-link";
+import { useLabels } from "../../site/labels";
 import { useSite } from "../../site/useSite";
 import type { Interest, SectionSettings } from "../../types";
 import Section from "./Section";
@@ -11,6 +12,7 @@ export default function InterestsSection({
   next?: SectionSettings; // the section after this one, for the skip button
 }) {
   const { site } = useSite();
+  const t = useLabels();
   if (site.interests.length === 0) return null;
 
   // Group the items by category, keeping the order they were added in:
@@ -22,7 +24,7 @@ export default function InterestsSection({
 
   const skip = next && (
     <HashLink smooth to={`/#${next.id}`} className="arrow-link down font-mono text-xs text-muted">
-      Skip to {next.title.toLowerCase()} <span className="arrow">↓</span>
+      {t("skipTo", { next: next.title.toLowerCase() })} <span className="arrow">↓</span>
     </HashLink>
   );
 

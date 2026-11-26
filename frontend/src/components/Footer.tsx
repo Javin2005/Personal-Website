@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { API_URL } from "../auth";
+import { useLabels } from "../site/labels";
 import { useSite } from "../site/useSite";
 
 interface GithubStatus {
@@ -19,6 +20,7 @@ interface SpotifyStatus {
 // Latest commit and current song, refreshed every 30 seconds while the
 // tab is visible. The backend caches the answers, so this is cheap.
 function StatusLine() {
+  const t = useLabels();
   const [github, setGithub] = useState<GithubStatus | null>(null);
   const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
 
@@ -49,12 +51,12 @@ function StatusLine() {
     <div className="grid gap-1 font-mono text-xs text-muted">
       {github && (
         <p>
-          <span className="text-accent2">last commit</span> {github.repo}: {github.message}
+          <span className="text-accent2">{t("lastCommit")}</span> {github.repo}: {github.message}
         </p>
       )}
       {spotify && (
         <p>
-          <span className="text-accent2">listening to</span>{" "}
+          <span className="text-accent2">{t("listeningTo")}</span>{" "}
           <a href={spotify.link} target="_blank" rel="noreferrer" className="hover:text-accent">
             {spotify.track} by {spotify.artist}
           </a>
@@ -66,15 +68,16 @@ function StatusLine() {
 
 export default function Footer() {
   const { site } = useSite();
+  const t = useLabels();
   const { settings, about } = site;
 
   return (
     <footer className="relative z-10 grid gap-6 border-t border-text/10 px-[max(20px,6vw)] pt-10 pb-12 text-sm text-muted md:grid-cols-2">
       <div className="grid content-start gap-2">
-        <p className="text-text/80">© {new Date().getFullYear()} {about?.name ?? "Christian J. Carlson"}</p>
+        <p className="text-text/80">© {new Date().getFullYear()} {about?.name ?? settings.siteTitle}</p>
         {settings.footerNote && <p>{settings.footerNote}</p>}
         <Link to="/login" className="w-fit font-mono text-xs text-muted/60 hover:text-accent">
-          sign in
+          {t("signIn")}
         </Link>
       </div>
       {settings.showStatus && <StatusLine />}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import { isLoggedIn, logout } from "../auth";
+import { useLabels } from "../site/labels";
 import { useSite } from "../site/useSite";
 
 // A link from the admin settings can point to a page ("/projects"), a
@@ -32,6 +33,7 @@ function NavItem({ href, label }: { href: string; label: string }) {
 
 export default function Nav() {
   const { site } = useSite();
+  const t = useLabels();
   const navigate = useNavigate();
   useLocation(); // re-render on page change, so the admin links appear right after logging in
   const [scrolled, setScrolled] = useState(false);
@@ -52,7 +54,8 @@ export default function Nav() {
     >
       <nav className="flex items-center justify-between gap-6 px-[max(20px,6vw)] py-4">
         <Link to="/" className="font-mono text-sm tracking-[0.08em] text-text hover:text-accent">
-          {initials(site.about?.name ?? `${site.settings.hero.firstLine} ${site.settings.hero.secondLine}`)}
+          {t("logo") ||
+            initials(site.about?.name ?? `${site.settings.hero.firstLine} ${site.settings.hero.secondLine}`)}
         </Link>
         <ul className="flex items-center gap-x-6 gap-y-1 overflow-x-auto text-sm whitespace-nowrap">
           {site.settings.nav.map((item) => (
@@ -64,7 +67,7 @@ export default function Nav() {
             <>
               <li>
                 <Link to="/admin" className="text-accent2 hover:text-accent">
-                  Admin
+                  {t("adminLink")}
                 </Link>
               </li>
               <li>
@@ -76,7 +79,7 @@ export default function Nav() {
                   }}
                   className="cursor-pointer text-muted hover:text-accent"
                 >
-                  Sign out
+                  {t("signOut")}
                 </button>
               </li>
             </>

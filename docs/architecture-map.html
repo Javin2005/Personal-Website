@@ -208,6 +208,7 @@ const NODES = {
   cloud:   { x: 780, y: 160, w: 180, t: "Cloudinary",         s: "images + videos" },
   apis:    { x: 780, y: 260, w: 180, t: "GitHub + Spotify",   s: "footer status line" },
   pg:      { x: 780, y: 460, w: 180, t: "Postgres",           s: "Supabase · the data" },
+  claude:  { x: 780, y: 360, w: 180, t: "Claude (MCP)",       s: "mcp-server/server.py" },
 };
 
 const EDGES = {
@@ -230,6 +231,7 @@ const EDGES = {
   "main-resend":    { d: "M500,168 H730 V90 H778", lx: 736, ly: 136, a: "start", l: "email" },
   "main-cloud":     { d: "M500,188 H778", lx: 735, ly: 180, a: "middle", l: "upload" },
   "main-apis":      { d: "M500,200 L778,282", lx: 735, ly: 258, a: "middle", l: "status.py" },
+  "claude-content": { d: "M778,388 H502", lx: 740, ly: 380, a: "middle", l: "API key" },
 };
 
 const NODE_INFO = {
@@ -334,6 +336,13 @@ return {"url": result["secure_url"]}`,
 if hit is not None:
     return hit`,
   },
+  claude: {
+    where: "mcp-server/server.py · runs on your computer",
+    text: "A small MCP server that Claude Code or Claude Desktop starts when needed. It turns requests like 'add my new job' into calls to the same API the admin page uses, signed with an API key instead of your password. The key can edit content but can't create or revoke keys.",
+    code: `@mcp.tool()
+def add_experience(role: str, organisation: str, period: str = "", ...):
+    return _request("POST", "/api/experience", json={...})`,
+  },
   pg: {
     where: "Supabase (cloud Postgres)",
     text: "Where the data lives: settings, about, projects, experience, education, skills, interests and the admin user. Only the backend has the connection string.",
@@ -411,6 +420,23 @@ username=...&password=...` },
       t: "The token is saved in localStorage and you land on /admin. The nav now shows Admin and Sign out.",
       c: `localStorage.setItem("token", data.access_token);
 navigate("/admin");` },
+  ]},
+  { id: "claude", name: "Claude adds a job for you", steps: [
+    { n: ["claude"], e: [], h: "You ask Claude",
+      t: "In Claude Code or Claude Desktop you write: 'Add my teaching assistant job at LTH, spring 2027, to the site.' Claude decides to use the add_experience tool and asks your permission.",
+      c: `add_experience(role="Teaching assistant", organisation="LTH",
+               period="Spring 2027", summary="...")` },
+    { n: ["claude","content"], e: ["claude-content"], h: "The MCP server calls the API",
+      t: "server.py sends the same request the admin page would, with the API key from its config instead of a login token.",
+      c: `POST /api/experience
+Authorization: Bearer pwk_...` },
+    { n: ["content","authpy","schemas"], e: ["content-authpy","content-schemas"], h: "Same checks as you",
+      t: "get_current_user finds the key by its hash and accepts it; ExperienceIn checks the fields. A revoked key gets 401.",
+      c: `key = session.exec(select(ApiKey).where(
+    ApiKey.key_hash == hash_api_key(token))).first()` },
+    { n: ["content","db","pg"], e: ["content-db","db-pg"], h: "Live on the site",
+      t: "The row is saved. The next visitor's /api/site request includes the new job.",
+      c: `INSERT INTO experience (role, organisation, ...) VALUES (...)` },
   ]},
   { id: "contact", name: "Someone sends a message", steps: [
     { n: ["pages","main"], e: ["pages-main"], h: "The form is posted",

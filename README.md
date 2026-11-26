@@ -11,7 +11,8 @@ The black hole in the background is a video from another of my projects, a real-
 - A tools page where calculators and other utilities will go. Some of them will only be visible to me.
 - A contact form that sends the message to my email.
 - A footer line with my latest GitHub commit and the song I'm listening to on Spotify.
-- An admin page where I can edit almost all of it without touching the code: text, sections, their order, projects, colors, fonts and the background video.
+- An admin page where I can edit all of it without touching the code: every piece of text, the sections and their order, projects, colors, fonts and the background video.
+- An MCP server, so Claude Code or Claude Desktop can update the site for me ("add my new job to the experience section").
 
 ## How it's built
 
@@ -34,16 +35,18 @@ For a clickable map of how the parts connect, open `docs/architecture-map.html` 
 | `app/main.py` | Creates the app and holds the login, contact form, about and media upload endpoints |
 | `app/content.py` | Settings, plus the editable lists (projects, experience, education, skills, interests) |
 | `app/status.py` | The GitHub and Spotify status line |
-| `app/auth.py` | Password hashing and login tokens (JWT) |
+| `app/auth.py` | Password hashing, login tokens (JWT) and API keys |
+| `app/apikeys.py` | Creating and revoking API keys |
 | `app/models.py` | The database tables |
 | `app/schemas.py` | Checks the data the admin sends before it reaches the database |
 | `app/default_content.py` | The starting content, taken from my CV |
 | `app/seed.py` | Fills a database with the starting content |
 | `migrations/` | Alembic migrations, which change the database structure without losing data |
+| `tests/` | The test suite (`poetry run pytest`) |
 
 ### How the editing works
 
-Almost nothing on the site is hard-coded. The colors, fonts, hero text, section order and menu are one row of settings in the database. Projects, experience, education, skills and interests are separate tables. The frontend loads all of it with one request to `/api/site` and builds the pages from it.
+Nothing on the public pages is hard-coded. The colors, fonts, hero text, section order, menu, page title and every small label (buttons, form fields, messages) are one row of settings in the database. Projects, experience, education, skills and interests are separate tables. The frontend loads all of it with one request to `/api/site` and builds the pages from it.
 
 The colors and fonts become CSS variables, so when I change the accent color in the admin page the whole site changes with it. Every save goes through the checks in `schemas.py`, so a broken color or a `javascript:` link can't get into the database.
 
@@ -73,6 +76,27 @@ npm run dev
 ```
 
 Then open http://localhost:5173. The admin page is at `/admin`, and you log in at `/login`.
+
+## Running the tests
+
+```bash
+cd backend
+poetry run pytest
+```
+
+The tests use their own temporary database, so they never touch your real data. They check the login lock on every admin endpoint, the input checks, the lists, settings, API keys, the contact form and the migrations.
+
+## Editing the site with Claude
+
+The `mcp-server/` folder has a small MCP server that lets Claude Code or Claude Desktop read and edit the site through the API. It uses an API key that you create under **Admin → API keys**, so Claude never needs your password. Setup takes a couple of minutes; see `mcp-server/README.md`.
+
+## Security
+
+- The admin endpoints all require either a login token or an API key. Without one they answer 401; the tests check this for every endpoint.
+- Passwords are stored as bcrypt hashes. Login is limited to 5 tries per minute, and a wrong username takes as long to reject as a wrong password, so usernames can't be guessed by timing.
+- Login tokens expire after 24 hours. API keys are stored only as hashes, can't create or revoke other keys, and can be revoked from the admin page.
+- Everything the admin saves is checked first: colors must be hex values, fonts must come from a fixed list, and links must be http(s), so nothing can inject code into the page.
+- The frontend is served with a Content Security Policy (in `frontend/vercel.json`) that only allows scripts from the site itself.
 
 ## Environment variables
 

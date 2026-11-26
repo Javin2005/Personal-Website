@@ -6,7 +6,46 @@ After that, the admin page is the place to change things; editing this
 file does not change a database that already has content.
 """
 
+# Every small piece of interface text on the public pages. "{next}" and
+# "{query}" are filled in by the frontend.
+DEFAULT_LABELS = {
+    "logo": "",  # empty = your initials from the name in About
+    "scrollDown": "Scroll down",
+    "skipTo": "Skip to {next}",
+    "completedCourses": "Completed courses",
+    "allProjects": "All projects",
+    "code": "Code",
+    "live": "Live",
+    "formName": "Name",
+    "formEmail": "Email",
+    "formMessage": "Message",
+    "formSend": "Send message",
+    "formSending": "Sending…",
+    "formSent": "Thanks, your message is on its way. I'll reply by email.",
+    "formError": "That didn't go through. Please try again in a moment.",
+    "formRateLimited": "Too many messages in a short time. Please wait a minute and try again.",
+    "projectsTitle": "Projects",
+    "searchLabel": "Search",
+    "searchPlaceholder": "C++, FastAPI, machine learning…",
+    "noMatches": "Nothing matches \u201c{query}\u201d. Try a language, like Python or C++.",
+    "toolsTitle": "Tools",
+    "noTools": "No tools yet. The first ones are on their way.",
+    "allTools": "All tools",
+    "privateTool": "private",
+    "lastCommit": "last commit",
+    "listeningTo": "listening to",
+    "signIn": "sign in",
+    "signOut": "Sign out",
+    "adminLink": "Admin",
+}
+
 DEFAULT_SETTINGS = {
+    "siteTitle": "Christian J. Carlson",
+    "siteDescription": (
+        "Christian J. Carlson, Computer Science and Engineering student at LTH, "
+        "Lund University. Projects, experience and contact."
+    ),
+    "labels": DEFAULT_LABELS,
     "theme": {
         "bg": "#06070a",        # event horizon
         "surface": "#0d0f14",

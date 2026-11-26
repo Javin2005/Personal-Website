@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useLabels } from "../../site/labels";
 import { useSite } from "../../site/useSite";
 import type { SectionSettings } from "../../types";
 import { ProjectRow, ProjectSpotlight } from "../ProjectItem";
@@ -6,6 +7,7 @@ import Section from "./Section";
 
 export default function ProjectsSection({ section }: { section: SectionSettings }) {
   const { site } = useSite();
+  const t = useLabels();
   const featured = site.projects.filter((p) => p.featured);
   if (featured.length === 0) return null;
 
@@ -15,7 +17,7 @@ export default function ProjectsSection({ section }: { section: SectionSettings 
 
   const allLink = (
     <Link to="/projects" className="arrow-link text-sm">
-      All projects <span className="arrow text-accent">→</span>
+      {t("allProjects")} <span className="arrow text-accent">→</span>
     </Link>
   );
 

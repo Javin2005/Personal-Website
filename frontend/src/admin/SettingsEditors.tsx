@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DEFAULT_LABELS, LABEL_GROUPS } from "../site/labels";
 import { FONTS } from "../site/theme";
 import type { NavLink, SectionSettings, Settings, Theme } from "../types";
 import { Button, ColorField, LinesField, MediaField, NumberField, SelectField, TextArea, TextField, Toggle } from "./fields";
@@ -165,6 +166,19 @@ export function LayoutTab({ draft, setDraft }: TabProps) {
 
       <Group title="Other text">
         <TextField
+          label="Page title"
+          hint="Shown in the browser tab."
+          value={draft.siteTitle}
+          onChange={(v) => setDraft({ ...draft, siteTitle: v })}
+        />
+        <TextArea
+          label="Page description"
+          hint="The short text search engines and link previews show."
+          rows={2}
+          value={draft.siteDescription}
+          onChange={(v) => setDraft({ ...draft, siteDescription: v })}
+        />
+        <TextField
           label="Email shown in the contact section"
           hint="Leave empty to only show the form."
           value={draft.contactEmail}
@@ -179,6 +193,38 @@ export function LayoutTab({ draft, setDraft }: TabProps) {
           onChange={(v) => setDraft({ ...draft, showStatus: v })}
         />
       </Group>
+    </div>
+  );
+}
+
+export function LabelsTab({ draft, setDraft }: TabProps) {
+  const labels = { ...DEFAULT_LABELS, ...draft.labels };
+  const set = (key: string, value: string) => setDraft({ ...draft, labels: { ...labels, [key]: value } });
+
+  return (
+    <div className="grid gap-10">
+      <header className="grid gap-1">
+        <h2 className="font-display text-2xl font-light">Labels</h2>
+        <p className="max-w-[60ch] text-sm text-muted">
+        The small pieces of text around the content: buttons, links, form fields and messages. Words in
+        curly brackets, like {"{next}"}, are filled in automatically; keep them where you want the value.
+        </p>
+      </header>
+      {LABEL_GROUPS.map((group) => (
+        <Group key={group.title} title={group.title}>
+          <div className="grid gap-5 sm:grid-cols-2">
+            {group.keys.map(([key, hint]) => (
+              <TextField
+                key={key}
+                label={key}
+                hint={`${hint}. Default: ${DEFAULT_LABELS[key] || "(empty)"}`}
+                value={labels[key] ?? ""}
+                onChange={(v) => set(key, v)}
+              />
+            ))}
+          </div>
+        </Group>
+      ))}
     </div>
   );
 }

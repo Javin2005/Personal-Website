@@ -1,8 +1,10 @@
 import { HashLink } from "react-router-hash-link";
+import { useLabels } from "../site/labels";
 import { useSite } from "../site/useSite";
 
 export default function Hero() {
   const { site } = useSite();
+  const t = useLabels();
   const { hero, sections } = site.settings;
   const about = site.about;
   const firstSection = sections.find((s) => s.visible);
@@ -65,7 +67,7 @@ export default function Hero() {
         </p>
         {firstSection && (
           <HashLink smooth to={`/#${firstSection.id}`} className="arrow-link down text-muted">
-            Scroll down <span className="arrow">↓</span>
+            {t("scrollDown")} <span className="arrow">↓</span>
           </HashLink>
         )}
       </div>

@@ -53,6 +53,9 @@ export interface NavLink {
 }
 
 export interface Settings {
+  siteTitle: string;
+  siteDescription: string;
+  labels: Record<string, string>;
   theme: Theme;
   video: VideoSettings;
   hero: HeroSettings;

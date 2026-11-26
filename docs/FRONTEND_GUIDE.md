@@ -211,11 +211,23 @@ Prefixes apply a class only in some situations:
 - `CollectionEditor<T extends Ordered>`: a generic. `T` stands for whichever item type the editor is used with (Project, Experience...). TypeScript then checks that the field names you list actually exist on that type.
 - `import type { ... }`: imports only types. They disappear when the code is built.
 
+## Labels: the small text
+
+Buttons, form fields and messages also come from the settings, through a small hook in `site/labels.ts`:
+
+```tsx
+const t = useLabels();
+<button>{t("formSend")}</button>                          // "Send message"
+<span>{t("skipTo", { next: "experience" })}</span>          // "Skip to experience"
+```
+
+`t` looks up the label in the saved settings, falls back to the default, and fills in anything in curly brackets. To add a new label, add it to `DEFAULT_LABELS` and `LABEL_GROUPS` in `labels.ts` (and to `DEFAULT_LABELS` in `backend/app/default_content.py`), then use `t("yourKey")`. It shows up in Admin → Labels automatically.
+
 ## The admin page
 
 `pages/Admin.tsx` has two kinds of tabs.
 
-The settings tabs (Appearance, Hero, Sections & menu) all edit one `draft` object. Nothing is sent until you press **Save changes**. While you edit colors and fonts, `applyTheme(draft.theme)` previews them on the admin page itself.
+The settings tabs (Appearance, Hero, Sections & menu, Labels) all edit one `draft` object. Nothing is sent until you press **Save changes**. While you edit colors and fonts, `applyTheme(draft.theme)` previews them on the admin page itself.
 
 The content tabs use `admin/CollectionEditor.tsx`. It is one component that can edit any list. You tell it the API path and which fields to show:
 
@@ -229,6 +241,8 @@ The content tabs use `admin/CollectionEditor.tsx`. It is one component that can 
   ...
 />
 ```
+
+The API keys tab (`admin/ApiKeysEditor.tsx`) creates keys for programs like the Claude MCP server. The full key is shown once, right after it's created; the backend only keeps a hash of it.
 
 On the backend, `content.py` does the same trick: `collection_router` creates the six endpoints (list, list all, add, reorder, save, delete) for every table.
 

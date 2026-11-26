@@ -6,7 +6,7 @@ are what FastAPI checks every request against before your endpoint runs.
 Invalid input gets an automatic 422 response listing what is wrong.
 """
 import re
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -120,6 +120,9 @@ class NavLink(BaseModel):
 
 
 class SettingsData(BaseModel):
+    siteTitle: str = Field(default="", max_length=120)
+    siteDescription: str = Field(default="", max_length=300)
+    labels: Dict[str, str] = Field(default={}, max_length=80)
     theme: Theme
     video: Video
     hero: Hero
@@ -130,6 +133,16 @@ class SettingsData(BaseModel):
     showStatus: bool = True
     projectsPageIntro: str = Field(default="", max_length=600)
     toolsPageIntro: str = Field(default="", max_length=600)
+
+    @field_validator("labels")
+    @classmethod
+    def labels_ok(cls, v: Dict[str, str]) -> Dict[str, str]:
+        for key, text in v.items():
+            if not re.fullmatch(r"[A-Za-z]{1,40}", key):
+                raise ValueError(f"bad label name: {key!r}")
+            if len(text) > 300:
+                raise ValueError(f"label {key!r} is longer than 300 characters")
+        return v
 
     @field_validator("sections")
     @classmethod

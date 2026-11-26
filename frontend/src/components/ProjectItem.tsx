@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useLabels } from "../site/labels";
 import type { Project } from "../types";
 
 const VIDEO = /\.(mp4|webm)(\?|$)/i;
@@ -40,17 +41,18 @@ export function ProjectMedia({ src, title }: { src: string; title: string }) {
 }
 
 function Links({ project }: { project: Project }) {
+  const t = useLabels();
   if (!project.github_url && !project.live_url) return null;
   return (
     <p className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
       {project.github_url && (
         <a href={project.github_url} target="_blank" rel="noreferrer" className="arrow-link">
-          Code <span className="arrow text-accent">↗</span>
+          {t("code")} <span className="arrow text-accent">↗</span>
         </a>
       )}
       {project.live_url && (
         <a href={project.live_url} target="_blank" rel="noreferrer" className="arrow-link">
-          Live <span className="arrow text-accent">↗</span>
+          {t("live")} <span className="arrow text-accent">↗</span>
         </a>
       )}
     </p>

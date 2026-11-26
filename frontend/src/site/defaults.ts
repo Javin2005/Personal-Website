@@ -1,4 +1,5 @@
 import type { SiteData } from "../types";
+import { DEFAULT_LABELS } from "./labels";
 
 // What a first-time visitor sees for the split second before the backend
 // answers. Copied from backend/app/default_content.py. After the first
@@ -6,6 +7,9 @@ import type { SiteData } from "../types";
 // only matters once per visitor and doesn't have to stay in sync perfectly.
 export const EMPTY_SITE: SiteData = {
   settings: {
+    siteTitle: "Christian J. Carlson",
+    siteDescription: "",
+    labels: DEFAULT_LABELS,
     theme: {
       bg: "#06070a",
       surface: "#0d0f14",

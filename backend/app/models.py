@@ -5,6 +5,7 @@ When you add or change a column here, you also need a migration in
 backend/migrations/versions/ so the live Postgres database gets the change
 (see README "Changing the database").
 """
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr, Field as PydField
@@ -103,3 +104,15 @@ class Interest(SQLModel, table=True):
     sort_order: int = 0
     visible: bool = True
 
+
+
+class ApiKey(SQLModel, table=True):
+    """A key that lets a program (like Claude through the MCP server) edit
+    the site for you. Only the hash is stored; the key itself is shown once."""
+    __tablename__ = "api_key"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    prefix: str  # first characters of the key, so you can tell keys apart
+    key_hash: str = Field(index=True, unique=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_used_at: Optional[datetime] = None
