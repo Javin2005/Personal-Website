@@ -12,7 +12,7 @@ The black hole in the background is a video from another of my projects, a real-
 - A contact form that sends the message to my email.
 - A footer line with my latest GitHub commit and the song I'm listening to on Spotify.
 - An admin page where I can edit all of it without touching the code: every piece of text, the sections and their order, projects, colors, fonts and the background video.
-- An MCP server, so Claude Code or Claude Desktop can update the site for me ("add my new job to the experience section").
+
 
 ## How it's built
 
@@ -85,10 +85,6 @@ poetry run pytest
 ```
 
 The tests use their own temporary database, so they never touch your real data. They check the login lock on every admin endpoint, the input checks, the lists, settings, API keys, the contact form and the migrations.
-
-## Editing the site with Claude
-
-The `mcp-server/` folder has a small MCP server that lets Claude Code or Claude Desktop read and edit the site through the API. It uses an API key that you create under **Admin → API keys**, so Claude never needs your password. Setup takes a couple of minutes; see `mcp-server/README.md`.
 
 ## Security
 
