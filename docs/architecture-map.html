@@ -1,0 +1,545 @@
+<title>Personal Website Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working surface. Flow picker on top, the system map on the left, the explanation panel on the right (stacks on phones). */
+:root {
+  --bg: #eceef2;
+  --surface: #f8f9fb;
+  --fg: #171b24;
+  --muted: #5a6373;
+  --line: #a9b0bd;
+  --band-front: #e1e7f0;
+  --band-back: #e9e4dc;
+  --band-out: #e3e9e3;
+  --accent: #b8520a;
+  --accent-soft: #f6dcc6;
+  --code-bg: #1d212b;
+  --code-fg: #e7e9ee;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1016; --surface: #161922; --fg: #e8eaf0; --muted: #9aa2b2; --line: #4a5162;
+    --band-front: #161d2a; --band-back: #221d18; --band-out: #18211b;
+    --accent: #ffa552; --accent-soft: #3a2614; --code-bg: #0a0c11; --code-fg: #e7e9ee;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1016; --surface: #161922; --fg: #e8eaf0; --muted: #9aa2b2; --line: #4a5162;
+  --band-front: #161d2a; --band-back: #221d18; --band-out: #18211b;
+  --accent: #ffa552; --accent-soft: #3a2614; --code-bg: #0a0c11; --code-fg: #e7e9ee;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.6 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 56px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; }
+
+header { display: grid; gap: 8px; max-width: 70ch; }
+h1 { font: 800 clamp(30px, 4.4vw, 46px)/1.05 var(--display); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; }
+
+.flows { display: grid; gap: 10px; }
+.label { font: 500 12px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.flow-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.flow-buttons button {
+  font: 500 14px/1 var(--body); color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; cursor: pointer;
+}
+.flow-buttons button:hover { border-color: var(--accent); }
+.flow-buttons button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+button:focus-visible, .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
+
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.scroller { overflow-x: auto; }
+svg.map { display: block; width: 100%; min-width: 720px; height: auto; color: var(--fg); }
+figcaption { color: var(--muted); font-size: 13px; }
+
+.band { stroke: none; }
+.band.front { fill: var(--band-front); }
+.band.back { fill: var(--band-back); }
+.band.out { fill: var(--band-out); }
+.band-label { font: 500 11px var(--mono); letter-spacing: 0.08em; fill: var(--muted); }
+
+.node { cursor: pointer; }
+.node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; transition: stroke .2s, fill .2s; }
+.node .t { font: 600 14px var(--body); fill: var(--fg); }
+.node .s { font: 400 11.5px var(--mono); fill: var(--muted); }
+.node:hover rect { stroke: var(--accent); }
+.node.hot rect { stroke: var(--accent); stroke-width: 2.4; fill: var(--accent-soft); }
+.node.dim { opacity: 0.38; }
+
+.edge path { fill: none; stroke: var(--line); stroke-width: 1.4; transition: stroke .2s, opacity .2s; }
+.edge text { font: 500 11px var(--mono); fill: var(--muted); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+.edge.hot path { stroke: var(--accent); stroke-width: 2.6; }
+.edge.hot text { fill: var(--accent); }
+.edge.dim { opacity: 0.25; }
+.mk { fill: var(--line); }
+.mk-hot { fill: var(--accent); }
+@media (prefers-reduced-motion: no-preference) {
+  .edge.hot path { stroke-dasharray: 7 5; animation: flow 0.9s linear infinite; }
+}
+@keyframes flow { to { stroke-dashoffset: -12; } }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: grid; gap: 14px; min-width: 0;
+}
+.panel h2 { font: 600 22px/1.2 var(--display); margin: 0; text-wrap: balance; }
+.panel p { margin: 0; }
+.panel .where { font: 500 12px var(--mono); color: var(--accent); }
+.panel ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+pre {
+  margin: 0; background: var(--code-bg); color: var(--code-fg); border-radius: 8px;
+  padding: 14px; overflow-x: auto; font: 400 12.5px/1.55 var(--mono);
+}
+.stepper { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stepper button {
+  font: 500 13px/1 var(--body); background: transparent; color: var(--fg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 9px 14px; cursor: pointer;
+}
+.stepper button:disabled { opacity: 0.35; cursor: default; }
+.stepper .count { font: 500 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.dots { display: flex; gap: 5px; }
+.dots span { width: 22px; height: 4px; border-radius: 2px; background: var(--line); }
+.dots span.on { background: var(--accent); }
+
+section.runs { display: grid; gap: 14px; }
+section.runs h2 { font: 600 24px/1.2 var(--display); margin: 0; }
+.runs-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 800px) { .runs-grid { grid-template-columns: 1fr; } }
+.runs-grid > div { border-top: 3px solid var(--line); padding-top: 12px; display: grid; gap: 6px; align-content: start; }
+.runs-grid h3 { margin: 0; font: 600 16px var(--body); }
+.runs-grid p { margin: 0; color: var(--muted); font-size: 14px; }
+.runs-grid .k { font: 500 12px var(--mono); color: var(--fg); }
+code { font-family: var(--mono); font-size: 0.92em; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>How your website fits together</h1>
+    <p class="lede">Pick a flow to follow one action from the browser to the database and back, one step at a time. Or click any box to see what that part of the code does.</p>
+  </header>
+
+  <div class="flows">
+    <span class="label">Follow a flow</span>
+    <div class="flow-buttons" id="flowButtons"></div>
+  </div>
+
+  <div class="stage">
+    <figure>
+      <div class="scroller">
+        <svg class="map" id="map" viewBox="0 0 1000 440" role="img"
+             aria-label="System map: the frontend in the browser calls main.py on the backend over HTTP; main.py uses schemas.py, auth.py and database.py, and talks to Postgres, Resend, Cloudinary, GitHub and Spotify.">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path class="mk" d="M0,0 L10,5 L0,10 z"></path>
+            </marker>
+            <marker id="arrowHot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path class="mk-hot" d="M0,0 L10,5 L0,10 z"></path>
+            </marker>
+          </defs>
+          <rect class="band front" x="20" y="16" width="240" height="414" rx="10"></rect>
+          <rect class="band back" x="300" y="16" width="420" height="414" rx="10"></rect>
+          <rect class="band out" x="760" y="16" width="222" height="414" rx="10"></rect>
+          <text class="band-label" x="40" y="42">FRONTEND · in the browser</text>
+          <text class="band-label" x="320" y="42">BACKEND · Python on Render</text>
+          <text class="band-label" x="780" y="42">OUTSIDE SERVICES</text>
+          <g id="edges"></g>
+          <g id="nodes"></g>
+        </svg>
+      </div>
+      <figcaption>Arrows point the way the request travels. Every answer comes back along the same arrow. The frontend never talks to the database directly: everything goes through <code>main.py</code>.</figcaption>
+    </figure>
+
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <section class="runs">
+    <h2>Where each part actually runs</h2>
+    <div class="runs-grid">
+      <div>
+        <h3>Vercel</h3>
+        <span class="k">serves files · runs none of your code</span>
+        <p><code>npm run build</code> turns your React code into plain HTML, JS and CSS files. Vercel just hands those files (and the black hole video) to each visitor from a CDN. The React code then runs on the visitor's computer.</p>
+      </div>
+      <div>
+        <h3>Render</h3>
+        <span class="k">runs Python 24/7 · free tier 512 MB RAM</span>
+        <p>Gunicorn starts several copies ("workers") of your FastAPI app. Each worker loads all of Python, FastAPI, SQLAlchemy and the Cloudinary SDK into memory, so more workers means more RAM. This is the only place your code runs on a server.</p>
+      </div>
+      <div>
+        <h3>Supabase · Resend · Cloudinary</h3>
+        <span class="k">other companies' servers</span>
+        <p>Your backend calls them over the internet using secret keys from <code>.env</code>. The browser never sees those keys. That's the main reason the backend exists.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const NODES = {
+  vercel:  { x: 40,  y: 60,  w: 200, t: "Vercel",             s: "hands out built files" },
+  pages:   { x: 40,  y: 160, w: 200, t: "Pages & components", s: "pages/*.tsx" },
+  authts:  { x: 40,  y: 260, w: 200, t: "auth.ts",            s: "token helpers" },
+  storage: { x: 40,  y: 360, w: 200, t: "localStorage",       s: "saved login token" },
+  schemas: { x: 320, y: 60,  w: 180, t: "schemas.py",         s: "checks incoming data" },
+  main:    { x: 320, y: 160, w: 180, t: "main.py",            s: "every API endpoint" },
+  authpy:  { x: 320, y: 260, w: 180, t: "auth.py",            s: "passwords + JWT" },
+  db:      { x: 530, y: 360, w: 170, t: "database.py",        s: "+ models.py tables" },
+  resend:  { x: 780, y: 60,  w: 180, t: "Resend",             s: "sends you email" },
+  cloud:   { x: 780, y: 160, w: 180, t: "Cloudinary",         s: "stores Life photos" },
+  apis:    { x: 780, y: 260, w: 180, t: "GitHub + Spotify",   s: "status bar data" },
+  pg:      { x: 780, y: 360, w: 180, t: "Postgres",           s: "Supabase · the data" },
+};
+
+const EDGES = {
+  "vercel-pages":  { d: "M140,116 V158", lx: 150, ly: 141, a: "start",  l: "JS + HTML, once" },
+  "pages-authts":  { d: "M140,216 V258", lx: 150, ly: 241, a: "start",  l: "uses helpers" },
+  "authts-storage":{ d: "M140,316 V358", lx: 150, ly: 341, a: "start",  l: "read / save token" },
+  "pages-main":    { d: "M240,186 H318", lx: 280, ly: 178, a: "middle", l: "HTTP" },
+  "authts-main":   { d: "M240,288 L318,206", lx: 288, ly: 262, a: "middle", l: "+ token" },
+  "main-schemas":  { d: "M410,160 V118", lx: 420, ly: 143, a: "start",  l: "validate" },
+  "main-authpy":   { d: "M410,216 V258", lx: 420, ly: 241, a: "start",  l: "check login" },
+  "main-db":       { d: "M500,210 L612,358", lx: 566, ly: 270, a: "start",  l: "query" },
+  "db-pg":         { d: "M700,388 H778", lx: 740, ly: 380, a: "middle", l: "SQL" },
+  "main-resend":   { d: "M500,172 L778,92",  lx: 640, ly: 122, a: "middle", l: "send email" },
+  "main-cloud":    { d: "M500,188 H778", lx: 640, ly: 180, a: "middle", l: "upload image" },
+  "main-apis":     { d: "M500,204 L778,286", lx: 640, ly: 238, a: "middle", l: "fetch status" },
+};
+
+const NODE_INFO = {
+  vercel: {
+    where: "Hosting · frontend/dist after npm run build",
+    text: "Vercel stores the built frontend and sends it to each visitor. That's all it does. There is no server process of yours on Vercel. vercel.json tells it to answer every URL (like /admin) with index.html so React Router can take over.",
+    code: `// frontend/vercel.json
+{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }`,
+  },
+  pages: {
+    where: "frontend/src/App.tsx · pages/ · components/",
+    text: "App.tsx maps URLs to pages. Each page starts empty, then a useEffect asks the backend for data and stores it with useState. Changing state makes React redraw the page.",
+    code: `const [projects, setProjects] = useState<Project[]>([]);
+useEffect(() => {
+  fetch(\`\${API_URL}/api/projects/featured\`)
+    .then((res) => res.json())
+    .then((data) => setProjects(data));
+}, []);`,
+  },
+  authts: {
+    where: "frontend/src/auth.ts",
+    text: "Small helpers so every page handles the login token the same way. authFetch adds the token to a request and sends you to /login if the backend answers 401.",
+    code: `export async function authFetch(path, options = {}) {
+  const res = await fetch(\`\${API_URL}\${path}\`, {
+    ...options,
+    headers: { ...options.headers,
+      Authorization: \`Bearer \${getToken()}\` },
+  });
+  if (res.status == 401) { logout(); window.location.href = "/login"; }
+  return res;
+}`,
+  },
+  storage: {
+    where: "Browser storage, per site",
+    text: "The JWT token is kept here after you log in, so you stay logged in across page reloads for 24 hours. Anyone with this token is treated as admin until it expires, which is why it expires.",
+    code: `localStorage.setItem("token", data.access_token);  // Login.tsx
+localStorage.getItem("token");                     // auth.ts`,
+  },
+  schemas: {
+    where: "backend/app/schemas.py",
+    text: "Describes the shape of data the API accepts. FastAPI checks every request body against these before your function runs. Bad input never reaches the database: the caller gets a 422 error listing what's wrong.",
+    code: `class ProjectCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    difficulty: int = Field(default=1, ge=1, le=5)
+    github_url: Optional[str] = None   # must be http(s)`,
+  },
+  main: {
+    where: "backend/app/main.py",
+    text: "The actual server. Each @app.get / @app.post / @app.put / @app.delete is one URL the frontend can call. Depends(...) runs a helper first: get_session opens a database connection, and get_current_user is the lock on admin-only endpoints.",
+    code: `@app.delete("/api/projects/{project_id}")
+def delete_project(project_id: int,
+                   session = Depends(get_session),
+                   admin = Depends(get_current_user)):   # the lock
+    ...`,
+  },
+  authpy: {
+    where: "backend/app/auth.py",
+    text: "Passwords are stored only as bcrypt hashes. On login it creates a JWT signed with SECRET_KEY. On every admin request it checks the signature. Nobody can forge one without SECRET_KEY, which only the server knows.",
+    code: `def get_current_user(token = Depends(oauth2_scheme)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    return payload["sub"]   # bad/expired token -> 401`,
+  },
+  db: {
+    where: "backend/app/database.py · models.py",
+    text: "models.py describes each table as a Python class (Project, About, LifePost, User…). database.py connects to DATABASE_URL: Postgres in production, a local SQLite file when you develop.",
+    code: `class Project(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    tech_stack: List[str] = Field(sa_column=Column(JSON))
+    featured: bool = False`,
+  },
+  resend: {
+    where: "Called from /api/contact",
+    text: "An email-sending service. The backend hands it the escaped message plus your secret API key, and Resend delivers it to your inbox. reply_to is the visitor's address, so you can just hit Reply.",
+    code: `resend.Emails.send({
+    "from": "onboarding@resend.dev",
+    "to": "...", "reply_to": form_data.email,
+    "html": f"<p>{message}</p>" })`,
+  },
+  cloud: {
+    where: "Called from POST/DELETE /api/life",
+    text: "Stores the Life photos. The backend uploads the file and saves only the returned URL in the database. Browsers then load the image straight from Cloudinary's CDN. Deleting a post now also deletes the file there.",
+    code: `upload_result = await run_in_threadpool(
+    cloudinary.uploader.upload, contents, resource_type="image")
+new_post.image_url = upload_result["secure_url"]`,
+  },
+  apis: {
+    where: "Called from /api/status/github and /api/status/spotify",
+    text: "The status bar shows your latest commit and current song. The backend makes these calls with your private tokens, and now caches the answers (GitHub 5 min, Spotify 25 s) so many visitors don't burn through GitHub's rate limit.",
+    code: `hit = cached("github", 300)
+if hit is not None:
+    return hit
+return remember("github", await _fetch_github_status())`,
+  },
+  pg: {
+    where: "Supabase (cloud Postgres)",
+    text: "Where the data actually lives. It survives restarts and redeploys of the backend. Only the backend has the connection string (DATABASE_URL), so the only way in from the internet is through your API's rules.",
+    code: `SELECT * FROM project WHERE featured = true;`,
+  },
+};
+
+const FLOWS = [
+  { id: "home", name: "Visitor opens the homepage", steps: [
+    { n: ["vercel","pages"], e: ["vercel-pages"], h: "The browser downloads the app",
+      t: "The visitor types your URL. Vercel sends index.html, one JavaScript bundle, the CSS and the black hole video. No Python runs yet.",
+      c: `dist/index.html
+dist/assets/index-*.js    (all of React + your pages)
+assets/BlackHole_preview.mp4` },
+    { n: ["pages"], e: [], h: "React draws an empty page",
+      t: "main.tsx mounts App, the router picks Home for '/', and Home renders with empty state. Then its useEffect fires.",
+      c: `<Route path="/" element={<Home />} />` },
+    { n: ["pages","main"], e: ["pages-main"], h: "Home asks the backend for data",
+      t: "Three HTTP GET requests go to Render: featured projects, about, creative. These need no login, so no token is attached.",
+      c: `GET https://<backend>/api/projects/featured
+GET https://<backend>/api/about
+GET https://<backend>/api/creative` },
+    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "The backend reads the database",
+      t: "FastAPI finds the function for that URL, gets a database session, and runs the query.",
+      c: `statement = select(Project).where(Project.featured == True)
+projects = session.exec(statement).all()` },
+    { n: ["pages","main"], e: ["pages-main"], h: "JSON comes back and the page fills in",
+      t: "FastAPI turns the rows into JSON. setProjects stores them, React redraws, and the cards appear.",
+      c: `[{"id": 1, "title": "Black hole renderer",
+  "tech_stack": ["C++", "OpenGL"], "featured": true, ...}]` },
+  ]},
+  { id: "login", name: "You log in", steps: [
+    { n: ["pages","main"], e: ["pages-main"], h: "Login.tsx sends username + password",
+      t: "Sent as form data to /api/token. The backend allows at most 5 attempts per minute per IP.",
+      c: `POST /api/token
+username=...&password=...` },
+    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "Look up the user",
+      t: "The backend finds the User row by username. The row only holds a bcrypt hash, never the real password.",
+      c: `user = session.exec(select(User).where(User.username == form_data.username)).first()` },
+    { n: ["main","authpy"], e: ["main-authpy"], h: "Check password, sign a token",
+      t: "bcrypt checks the typed password against the hash. If it matches, auth.py creates a JWT containing your username and an expiry time, signed with SECRET_KEY.",
+      c: `if not user or not verify_password(form_data.password, user.hashed_password):
+    raise HTTPException(400, "Incorrect username or password")
+return {"access_token": create_access_token({"sub": user.username})}` },
+    { n: ["pages","authts","storage"], e: ["pages-authts","authts-storage"], h: "The browser keeps the token",
+      t: "Login.tsx saves the token in localStorage. From now on isLoggedIn() returns true (until it expires) and the Navbar shows Admin.",
+      c: `localStorage.setItem("token", data.access_token);
+navigate("/");` },
+  ]},
+  { id: "edit", name: "You edit your profile in Admin", steps: [
+    { n: ["pages","authts","storage"], e: ["pages-authts","authts-storage"], h: "Admin uses authFetch",
+      t: "You press Commit Changes. Admin.tsx calls authFetch, which reads the token from localStorage.",
+      c: `await authFetch("/api/about", { method: "PUT",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(about) });` },
+    { n: ["authts","main"], e: ["authts-main"], h: "The request carries the token",
+      t: "The token goes in the Authorization header. Hiding the Admin page in React is only cosmetic. This header is what actually proves who you are.",
+      c: `PUT /api/about
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...` },
+    { n: ["main","authpy"], e: ["main-authpy"], h: "The lock: get_current_user",
+      t: "Before update_about runs, FastAPI runs get_current_user. A missing, forged or expired token stops the request here with 401.",
+      c: `def update_about(updated_about: AboutUpdate,
+                 session = Depends(get_session),
+                 admin = Depends(get_current_user)):` },
+    { n: ["main","schemas"], e: ["main-schemas"], h: "The data is validated",
+      t: "The body must match AboutUpdate: name not empty, links must be http(s), and so on. Otherwise FastAPI answers 422 and Admin shows the error.",
+      c: `class AboutUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    socials: List[SocialLink]   # url must be http(s)` },
+    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "Saved",
+      t: "The existing About row is updated and committed. Next time anyone loads the homepage, they get the new text.",
+      c: `for key, value in about_data.items():
+    setattr(db_about, key, value)
+session.commit()` },
+  ]},
+  { id: "contact", name: "Someone sends a message", steps: [
+    { n: ["pages","main"], e: ["pages-main"], h: "Contact.tsx posts the form",
+      t: "Sent as JSON. The limiter allows 3 per minute per IP; a 4th gets HTTP 429 and the form says to wait.",
+      c: `POST /api/contact
+{"name": "Ada", "email": "ada@example.com", "message": "Hi!"}` },
+    { n: ["main"], e: [], h: "Validated and escaped",
+      t: "ContactForm checks lengths and that the email looks real. html.escape turns any <script> into harmless text before it goes into the email.",
+      c: `class ContactForm(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    email: EmailStr
+    message: str = Field(min_length=1, max_length=5000)` },
+    { n: ["main","resend"], e: ["main-resend"], h: "Resend delivers the email",
+      t: "The backend calls Resend with its secret API key. Nothing is saved in your database. The message only exists in your inbox.",
+      c: `resend.Emails.send({ "to": "...", "reply_to": form_data.email, ... })` },
+  ]},
+  { id: "life", name: "You upload a Life photo", steps: [
+    { n: ["pages","authts","main"], e: ["pages-authts","authts-main"], h: "The file is sent with the token",
+      t: "Life.tsx builds a FormData (text fields + the image file) and sends it with authFetch.",
+      c: `formData.append("image", selectedFile);
+await authFetch("/api/life", { method: "POST", body: formData });` },
+    { n: ["main","authpy"], e: ["main-authpy"], h: "Logged in? Real image? Under 10 MB?",
+      t: "The token check runs first. Then the backend rejects anything that isn't an image or is too large, before spending time on the upload.",
+      c: `if not image.content_type.startswith("image/"):
+    raise HTTPException(400, "File must be an image")` },
+    { n: ["main","cloud"], e: ["main-cloud"], h: "Uploaded to Cloudinary",
+      t: "Your server's disk on Render is wiped on every redeploy, so images live on Cloudinary. You get back a permanent URL.",
+      c: `upload_result = cloudinary.uploader.upload(contents)
+url = upload_result["secure_url"]` },
+    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "Only the URL is saved",
+      t: "The database row stores the title, caption and the Cloudinary URL. Visitors' browsers load the picture straight from Cloudinary.",
+      c: `LifePost(title=..., caption=..., image_url=url)` },
+  ]},
+  { id: "status", name: "The status bar updates", steps: [
+    { n: ["pages","main"], e: ["pages-main"], h: "Polling every 30 seconds",
+      t: "StatusBar asks for GitHub and Spotify status when the page loads and then every 30 s, but only while the tab is visible.",
+      c: `const interval = setInterval(fetchData, 30000);
+if (document.hidden) return;` },
+    { n: ["main"], e: [], h: "Cache check",
+      t: "If the backend asked GitHub less than 5 minutes ago, it reuses that answer. A hundred visitors cost one GitHub call, not hundreds.",
+      c: `hit = cached("github", 300)
+if hit is not None: return hit` },
+    { n: ["main","apis"], e: ["main-apis"], h: "Ask GitHub and Spotify",
+      t: "On a cache miss the backend calls GitHub (latest push) and Spotify (refreshes an access token, then asks what's playing) using your private tokens.",
+      c: `GET https://api.github.com/users/<you>/events
+POST https://accounts.spotify.com/api/token  (refresh)
+GET https://api.spotify.com/v1/me/player/currently-playing` },
+  ]},
+];
+
+const SVGNS = "http://www.w3.org/2000/svg";
+const el = (name, attrs = {}, parent) => {
+  const e = document.createElementNS(SVGNS, name);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+};
+
+const edgeEls = {}, nodeEls = {};
+const gE = document.getElementById("edges"), gN = document.getElementById("nodes");
+for (const [id, e] of Object.entries(EDGES)) {
+  const g = el("g", { class: "edge" }, gE);
+  el("path", { d: e.d, "marker-end": "url(#arrow)" }, g);
+  const t = el("text", { x: e.lx, y: e.ly, "text-anchor": e.a }, g);
+  t.textContent = e.l;
+  edgeEls[id] = g;
+}
+for (const [id, n] of Object.entries(NODES)) {
+  const g = el("g", { class: "node", tabindex: "0", role: "button", "aria-label": `${n.t}: ${n.s}` }, gN);
+  el("rect", { x: n.x, y: n.y, width: n.w, height: 56, rx: 7 }, g);
+  el("text", { class: "t", x: n.x + 14, y: n.y + 24 }, g).textContent = n.t;
+  el("text", { class: "s", x: n.x + 14, y: n.y + 42 }, g).textContent = n.s;
+  g.addEventListener("click", () => showNode(id));
+  g.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); showNode(id); } });
+  nodeEls[id] = g;
+}
+
+function highlight(nodes, edges) {
+  const any = nodes.length > 0;
+  for (const [id, g] of Object.entries(nodeEls)) {
+    g.classList.toggle("hot", nodes.includes(id));
+    g.classList.toggle("dim", any && !nodes.includes(id));
+  }
+  for (const [id, g] of Object.entries(edgeEls)) {
+    const hot = edges.includes(id);
+    g.classList.toggle("hot", hot);
+    g.classList.toggle("dim", any && !hot);
+    g.querySelector("path").setAttribute("marker-end", hot ? "url(#arrowHot)" : "url(#arrow)");
+  }
+}
+
+const panel = document.getElementById("panel");
+function h(tag, text, cls) { const e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+
+let flowIdx = 0, stepIdx = 0;
+const flowButtons = document.getElementById("flowButtons");
+FLOWS.forEach((f, i) => {
+  const b = h("button", f.name);
+  b.type = "button";
+  b.addEventListener("click", () => { flowIdx = i; stepIdx = 0; renderStep(); });
+  flowButtons.appendChild(b);
+});
+
+function setPressed(i) {
+  [...flowButtons.children].forEach((b, j) => b.setAttribute("aria-pressed", String(j === i)));
+}
+
+function renderStep() {
+  const f = FLOWS[flowIdx], s = f.steps[stepIdx];
+  setPressed(flowIdx);
+  highlight(s.n, s.e);
+  panel.replaceChildren();
+  panel.appendChild(h("span", f.name, "label"));
+  panel.appendChild(h("h2", s.h));
+  panel.appendChild(h("p", s.t));
+  panel.appendChild(h("pre", s.c));
+  const nav = h("div", null, "stepper");
+  const prev = h("button", "← Back"); prev.type = "button"; prev.disabled = stepIdx === 0;
+  const next = h("button", stepIdx === f.steps.length - 1 ? "Done" : "Next →"); next.type = "button";
+  next.disabled = stepIdx === f.steps.length - 1;
+  prev.addEventListener("click", () => { stepIdx--; renderStep(); });
+  next.addEventListener("click", () => { stepIdx++; renderStep(); });
+  const dots = h("div", null, "dots");
+  f.steps.forEach((_, j) => dots.appendChild(h("span", null, j === stepIdx ? "on" : "")));
+  nav.append(prev, next, h("span", `Step ${stepIdx + 1} of ${f.steps.length}`, "count"), dots);
+  panel.appendChild(nav);
+}
+
+function showNode(id) {
+  const n = NODES[id], info = NODE_INFO[id];
+  setPressed(-1);
+  const edges = Object.keys(EDGES).filter((k) => k.split("-").includes(id));
+  const neighbours = new Set([id]);
+  edges.forEach((k) => k.split("-").forEach((x) => neighbours.add(x)));
+  highlight([...neighbours], edges);
+  panel.replaceChildren();
+  panel.appendChild(h("span", "Part of the system", "label"));
+  panel.appendChild(h("h2", n.t));
+  panel.appendChild(h("span", info.where, "where"));
+  panel.appendChild(h("p", info.text));
+  if (edges.length) {
+    panel.appendChild(h("span", "Connected to", "label"));
+    const ul = h("ul");
+    edges.forEach((k) => {
+      const other = k.split("-").find((x) => x !== id);
+      ul.appendChild(h("li", `${NODES[other].t} (${EDGES[k].l})`));
+    });
+    panel.appendChild(ul);
+  }
+  panel.appendChild(h("pre", info.code));
+}
+
+renderStep();
+</script>
