@@ -1,0 +1,572 @@
+<title>Personal Website Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working surface. Flow picker on top, the system map on the left, the explanation panel on the right (stacks on phones). */
+:root {
+  --bg: #eceef2;
+  --surface: #f8f9fb;
+  --fg: #171b24;
+  --muted: #5a6373;
+  --line: #a9b0bd;
+  --band-front: #e1e7f0;
+  --band-back: #e9e4dc;
+  --band-out: #e3e9e3;
+  --accent: #b8520a;
+  --accent-soft: #f6dcc6;
+  --code-bg: #1d212b;
+  --code-fg: #e7e9ee;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1016; --surface: #161922; --fg: #e8eaf0; --muted: #9aa2b2; --line: #4a5162;
+    --band-front: #161d2a; --band-back: #221d18; --band-out: #18211b;
+    --accent: #ffa552; --accent-soft: #3a2614; --code-bg: #0a0c11; --code-fg: #e7e9ee;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1016; --surface: #161922; --fg: #e8eaf0; --muted: #9aa2b2; --line: #4a5162;
+  --band-front: #161d2a; --band-back: #221d18; --band-out: #18211b;
+  --accent: #ffa552; --accent-soft: #3a2614; --code-bg: #0a0c11; --code-fg: #e7e9ee;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.6 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 56px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; }
+
+header { display: grid; gap: 8px; max-width: 70ch; }
+h1 { font: 800 clamp(30px, 4.4vw, 46px)/1.05 var(--display); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; }
+
+.flows { display: grid; gap: 10px; }
+.label { font: 500 12px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.flow-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.flow-buttons button {
+  font: 500 14px/1 var(--body); color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; cursor: pointer;
+}
+.flow-buttons button:hover { border-color: var(--accent); }
+.flow-buttons button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+button:focus-visible, .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
+
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.scroller { overflow-x: auto; }
+svg.map { display: block; width: 100%; min-width: 720px; height: auto; color: var(--fg); }
+figcaption { color: var(--muted); font-size: 13px; }
+
+.band { stroke: none; }
+.band.front { fill: var(--band-front); }
+.band.back { fill: var(--band-back); }
+.band.out { fill: var(--band-out); }
+.band-label { font: 500 11px var(--mono); letter-spacing: 0.08em; fill: var(--muted); }
+
+.node { cursor: pointer; }
+.node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; transition: stroke .2s, fill .2s; }
+.node .t { font: 600 14px var(--body); fill: var(--fg); }
+.node .s { font: 400 11.5px var(--mono); fill: var(--muted); }
+.node:hover rect { stroke: var(--accent); }
+.node.hot rect { stroke: var(--accent); stroke-width: 2.4; fill: var(--accent-soft); }
+.node.dim { opacity: 0.38; }
+
+.edge path { fill: none; stroke: var(--line); stroke-width: 1.4; transition: stroke .2s, opacity .2s; }
+.edge text { font: 500 11px var(--mono); fill: var(--muted); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+.edge.hot path { stroke: var(--accent); stroke-width: 2.6; }
+.edge.hot text { fill: var(--accent); }
+.edge.dim { opacity: 0.25; }
+.mk { fill: var(--line); }
+.mk-hot { fill: var(--accent); }
+@media (prefers-reduced-motion: no-preference) {
+  .edge.hot path { stroke-dasharray: 7 5; animation: flow 0.9s linear infinite; }
+}
+@keyframes flow { to { stroke-dashoffset: -12; } }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: grid; gap: 14px; min-width: 0;
+}
+.panel h2 { font: 600 22px/1.2 var(--display); margin: 0; text-wrap: balance; }
+.panel p { margin: 0; }
+.panel .where { font: 500 12px var(--mono); color: var(--accent); }
+.panel ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+pre {
+  margin: 0; background: var(--code-bg); color: var(--code-fg); border-radius: 8px;
+  padding: 14px; overflow-x: auto; font: 400 12.5px/1.55 var(--mono);
+}
+.stepper { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stepper button {
+  font: 500 13px/1 var(--body); background: transparent; color: var(--fg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 9px 14px; cursor: pointer;
+}
+.stepper button:disabled { opacity: 0.35; cursor: default; }
+.stepper .count { font: 500 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.dots { display: flex; gap: 5px; }
+.dots span { width: 22px; height: 4px; border-radius: 2px; background: var(--line); }
+.dots span.on { background: var(--accent); }
+
+section.runs { display: grid; gap: 14px; }
+section.runs h2 { font: 600 24px/1.2 var(--display); margin: 0; }
+.runs-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 800px) { .runs-grid { grid-template-columns: 1fr; } }
+.runs-grid > div { border-top: 3px solid var(--line); padding-top: 12px; display: grid; gap: 6px; align-content: start; }
+.runs-grid h3 { margin: 0; font: 600 16px var(--body); }
+.runs-grid p { margin: 0; color: var(--muted); font-size: 14px; }
+.runs-grid .k { font: 500 12px var(--mono); color: var(--fg); }
+code { font-family: var(--mono); font-size: 0.92em; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>How your website fits together</h1>
+    <p class="lede">Pick a flow to follow one action from the browser to the database and back, one step at a time. Or click any box to see what that part of the code does.</p>
+  </header>
+
+  <div class="flows">
+    <span class="label">Follow a flow</span>
+    <div class="flow-buttons" id="flowButtons"></div>
+  </div>
+
+  <div class="stage">
+    <figure>
+      <div class="scroller">
+        <svg class="map" id="map" viewBox="0 0 1000 540" role="img"
+             aria-label="System map: the frontend loads all site data from content.py through /api/site and sends admin changes with a login token; main.py handles login, contact and uploads; both check logins with auth.py and input with schemas.py, and store data in Postgres. main.py also talks to Resend, Cloudinary, GitHub and Spotify.">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path class="mk" d="M0,0 L10,5 L0,10 z"></path>
+            </marker>
+            <marker id="arrowHot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path class="mk-hot" d="M0,0 L10,5 L0,10 z"></path>
+            </marker>
+          </defs>
+          <rect class="band front" x="20" y="16" width="240" height="514" rx="10"></rect>
+          <rect class="band back" x="300" y="16" width="420" height="514" rx="10"></rect>
+          <rect class="band out" x="760" y="16" width="222" height="514" rx="10"></rect>
+          <text class="band-label" x="40" y="42">FRONTEND · in the browser</text>
+          <text class="band-label" x="320" y="42">BACKEND · Python on Render</text>
+          <text class="band-label" x="780" y="42">OUTSIDE SERVICES</text>
+          <g id="edges"></g>
+          <g id="nodes"></g>
+        </svg>
+      </div>
+      <figcaption>Arrows point the way the request travels. Every answer comes back along the same arrow. The frontend never talks to the database directly: everything goes through the backend. The unlabeled line on the left is pages reading data with <code>useSite()</code>.</figcaption>
+    </figure>
+
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <section class="runs">
+    <h2>Where each part actually runs</h2>
+    <div class="runs-grid">
+      <div>
+        <h3>Vercel</h3>
+        <span class="k">serves files · runs none of your code</span>
+        <p><code>npm run build</code> turns your React code into plain HTML, JS and CSS files. Vercel just hands those files (and the black hole video) to each visitor from a CDN. The React code then runs on the visitor's computer.</p>
+      </div>
+      <div>
+        <h3>Render</h3>
+        <span class="k">runs Python 24/7 · free tier 512 MB RAM</span>
+        <p>Gunicorn starts copies ("workers") of the FastAPI app, and each one holds all of Python, FastAPI and SQLAlchemy in memory. Use two workers on the free plan. On startup the app updates the database structure with Alembic. This is the only place your code runs on a server.</p>
+      </div>
+      <div>
+        <h3>Supabase · Resend · Cloudinary</h3>
+        <span class="k">other companies' servers</span>
+        <p>Your backend calls them over the internet using secret keys from <code>.env</code>. The browser never sees those keys. That's the main reason the backend exists.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const NODES = {
+  vercel:  { x: 40,  y: 60,  w: 200, t: "Vercel",             s: "hands out built files" },
+  pages:   { x: 40,  y: 160, w: 200, t: "Pages & components", s: "pages/, components/" },
+  authts:  { x: 40,  y: 260, w: 200, t: "auth.ts",            s: "requests + login token" },
+  site:    { x: 40,  y: 360, w: 200, t: "SiteContext",        s: "site data + theme" },
+  storage: { x: 40,  y: 460, w: 200, t: "localStorage",       s: "token, cached site" },
+  main:    { x: 320, y: 160, w: 180, t: "main.py",            s: "login, contact, media" },
+  authpy:  { x: 320, y: 260, w: 180, t: "auth.py",            s: "passwords + JWT" },
+  content: { x: 320, y: 360, w: 180, t: "content.py",         s: "settings + lists" },
+  schemas: { x: 530, y: 60,  w: 170, t: "schemas.py",         s: "checks input" },
+  db:      { x: 530, y: 460, w: 170, t: "database.py",        s: "models + migrations" },
+  resend:  { x: 780, y: 60,  w: 180, t: "Resend",             s: "sends you email" },
+  cloud:   { x: 780, y: 160, w: 180, t: "Cloudinary",         s: "images + videos" },
+  apis:    { x: 780, y: 260, w: 180, t: "GitHub + Spotify",   s: "footer status line" },
+  pg:      { x: 780, y: 460, w: 180, t: "Postgres",           s: "Supabase · the data" },
+  claude:  { x: 780, y: 360, w: 180, t: "Claude (MCP)",       s: "mcp-server/server.py" },
+};
+
+const EDGES = {
+  "vercel-pages":   { d: "M140,116 V158", lx: 150, ly: 141, a: "start", l: "JS + HTML, once" },
+  "pages-authts":   { d: "M140,216 V258", lx: 150, ly: 241, a: "start", l: "admin requests" },
+  "pages-site":     { d: "M40,206 H28 V382 H38", lx: 0, ly: 0, a: "start", l: "" },
+  "site-storage":   { d: "M140,416 V458", lx: 150, ly: 441, a: "start", l: "cache" },
+  "authts-storage": { d: "M240,304 H254 V488 H242", lx: 0, ly: 0, a: "start", l: "" },
+  "pages-main":     { d: "M240,186 H318", lx: 280, ly: 178, a: "middle", l: "contact" },
+  "authts-main":    { d: "M240,278 L318,206", lx: 290, ly: 232, a: "middle", l: "+ token" },
+  "authts-content": { d: "M240,298 L318,372", lx: 290, ly: 346, a: "middle", l: "+ token" },
+  "site-content":   { d: "M240,396 H318", lx: 280, ly: 412, a: "middle", l: "/api/site" },
+  "main-authpy":    { d: "M410,216 V258", lx: 420, ly: 241, a: "start", l: "check login" },
+  "content-authpy": { d: "M410,360 V318", lx: 420, ly: 343, a: "start", l: "check login" },
+  "main-schemas":   { d: "M500,176 L560,118", lx: 538, ly: 140, a: "start", l: "validate" },
+  "content-schemas":{ d: "M500,372 L640,118", lx: 590, ly: 236, a: "start", l: "validate" },
+  "content-db":     { d: "M480,416 V488 H528", lx: 488, ly: 450, a: "start", l: "query" },
+  "main-db":        { d: "M500,206 H514 V470 H528", lx: 0, ly: 0, a: "start", l: "" },
+  "db-pg":          { d: "M700,488 H778", lx: 740, ly: 480, a: "middle", l: "SQL" },
+  "main-resend":    { d: "M500,168 H730 V90 H778", lx: 736, ly: 136, a: "start", l: "email" },
+  "main-cloud":     { d: "M500,188 H778", lx: 735, ly: 180, a: "middle", l: "upload" },
+  "main-apis":      { d: "M500,200 L778,282", lx: 735, ly: 258, a: "middle", l: "status.py" },
+  "claude-content": { d: "M778,388 H502", lx: 740, ly: 380, a: "middle", l: "API key" },
+};
+
+const NODE_INFO = {
+  vercel: {
+    where: "Hosting · frontend/dist after npm run build",
+    text: "Vercel stores the built frontend and the black hole video and sends them to each visitor. No code of yours runs there. vercel.json tells it to answer every URL (like /projects) with index.html so React Router can pick the page.",
+    code: `// frontend/vercel.json
+{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }`,
+  },
+  pages: {
+    where: "frontend/src/pages · components · components/sections",
+    text: "App.tsx maps URLs to pages. Home draws the hero and then one component per visible section, in the order saved in the settings. None of the text is in the code; every section reads it with useSite().",
+    code: `const visible = site.settings.sections.filter((s) => s.visible);
+return visible.map((section) => {
+  const Component = SECTIONS[section.id];
+  return <Component key={section.id} section={section} />;
+});`,
+  },
+  authts: {
+    where: "frontend/src/auth.ts",
+    text: "Helpers for talking to the backend. authFetch adds the login token; sendJson sends JSON and turns the backend's error into readable text; uploadMedia sends a file to /api/media.",
+    code: `export async function sendJson(path, method, body) {
+  const res = await authFetch(path, { method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(await errorText(res));
+  return res.json();
+}`,
+  },
+  site: {
+    where: "frontend/src/site/SiteContext.tsx · theme.ts",
+    text: "Loads everything the public pages need with one request and shares it with every component. It shows the cached copy from the last visit first, so the page appears at once even while Render wakes up. It also turns the saved colors and fonts into CSS variables.",
+    code: `const [site, setSite] = useState(() => readCache() ?? EMPTY_SITE);
+useEffect(() => { reload(); }, [reload]);           // fetch /api/site
+useEffect(() => { applyTheme(site.settings.theme); }, [site.settings.theme]);`,
+  },
+  storage: {
+    where: "Browser storage, per site",
+    text: "Holds two things: the login token (so you stay logged in for 24 hours) and a copy of the last site data, used to draw the page instantly on the next visit.",
+    code: `localStorage.setItem("token", data.access_token);       // Login.tsx
+localStorage.setItem("site-cache-v1", JSON.stringify(data)); // SiteContext`,
+  },
+  main: {
+    where: "backend/app/main.py",
+    text: "Creates the FastAPI app, runs the migrations on startup, and holds the endpoints that aren't content: login, the contact form, about, and media uploads to Cloudinary. It also plugs in the routers from content.py and status.py.",
+    code: `@asynccontextmanager
+async def lifespan(app):
+    run_migrations()        # alembic upgrade head
+    ensure_settings_row()
+    yield`,
+  },
+  authpy: {
+    where: "backend/app/auth.py",
+    text: "Passwords are stored only as bcrypt hashes. Login creates a JWT signed with SECRET_KEY. Every admin endpoint depends on get_current_user, which checks that signature and answers 401 if it's missing, forged or expired.",
+    code: `def get_current_user(token = Depends(oauth2_scheme)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    return payload["sub"]`,
+  },
+  content: {
+    where: "backend/app/content.py",
+    text: "The editable content. /api/site returns everything at once. /api/settings is the one JSON row with colors, fonts, hero text and section order. collection_router creates the same six endpoints for each list: projects, experience, education, skills, interests.",
+    code: `COLLECTIONS = [
+    ("projects", Project, ProjectIn),
+    ("experience", Experience, ExperienceIn),
+    ...
+]
+collection_routers = [collection_router(*c) for c in COLLECTIONS]`,
+  },
+  schemas: {
+    where: "backend/app/schemas.py",
+    text: "Describes what the API accepts. Colors must be #rrggbb, fonts must come from a fixed list, links must be http(s). That keeps anything harmful out of the CSS and the page. Bad input gets a 422 listing what's wrong.",
+    code: `class Theme(BaseModel):
+    accent: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
+    fontDisplay: str          # must be in FONTS`,
+  },
+  db: {
+    where: "backend/app/database.py · models.py · migrations/",
+    text: "models.py describes the tables. The Alembic migrations in migrations/versions change the live database's structure (new tables, new columns) without losing data, and run by themselves when the server starts.",
+    code: `class Experience(SQLModel, table=True):
+    role: str
+    organisation: str
+    period: str = ""
+    sort_order: int = 0
+    visible: bool = True`,
+  },
+  resend: {
+    where: "Called from /api/contact",
+    text: "Delivers contact form messages to your inbox. reply_to is the visitor's address, so you can just hit Reply.",
+    code: `resend.Emails.send({ "to": "...", "reply_to": form_data.email, ... })`,
+  },
+  cloud: {
+    where: "Called from POST /api/media",
+    text: "Stores images and videos you upload from the admin page (project media, profile picture, a new background video). The backend uploads the file and returns the URL, which you then save like any other field.",
+    code: `result = await run_in_threadpool(
+    cloudinary.uploader.upload, file.file, resource_type=kind)
+return {"url": result["secure_url"]}`,
+  },
+  apis: {
+    where: "backend/app/status.py",
+    text: "The footer's 'last commit' and 'listening to' line. The backend calls GitHub and Spotify with your private tokens and caches the answers (5 minutes and 25 seconds), so many visitors cost almost nothing.",
+    code: `hit = cached("github", 300)
+if hit is not None:
+    return hit`,
+  },
+  claude: {
+    where: "mcp-server/server.py · runs on your computer",
+    text: "A small MCP server that Claude Code or Claude Desktop starts when needed. It turns requests like 'add my new job' into calls to the same API the admin page uses, signed with an API key instead of your password. The key can edit content but can't create or revoke keys.",
+    code: `@mcp.tool()
+def add_experience(role: str, organisation: str, period: str = "", ...):
+    return _request("POST", "/api/experience", json={...})`,
+  },
+  pg: {
+    where: "Supabase (cloud Postgres)",
+    text: "Where the data lives: settings, about, projects, experience, education, skills, interests and the admin user. Only the backend has the connection string.",
+    code: `SELECT * FROM experience WHERE visible ORDER BY sort_order;`,
+  },
+};
+
+const FLOWS = [
+  { id: "home", name: "Visitor opens the homepage", steps: [
+    { n: ["vercel","pages"], e: ["vercel-pages"], h: "The browser downloads the app",
+      t: "Vercel sends index.html, one JavaScript bundle, the CSS and the poster image for the video.",
+      c: `dist/index.html
+dist/assets/index-*.js
+assets/blackhole-poster.jpg  → then assets/blackhole.mp4` },
+    { n: ["site","storage","pages"], e: ["site-storage","pages-site"], h: "Draw from the cache right away",
+      t: "SiteProvider looks for the content this browser saw last time. If it finds it, the whole page is drawn immediately. A first-time visitor sees the built-in defaults instead.",
+      c: `useState(() => readCache() ?? EMPTY_SITE)` },
+    { n: ["site","content"], e: ["site-content"], h: "Ask for fresh content",
+      t: "One request to /api/site. On the free plan the server may be asleep and take up to a minute; the cached page is already showing, so the visitor doesn't notice.",
+      c: `GET https://<backend>/api/site` },
+    { n: ["content","db","pg"], e: ["content-db","db-pg"], h: "Collect everything",
+      t: "content.py reads the settings row and every visible item of each list, in the saved order.",
+      c: `return {
+    "settings": get_settings(session),
+    "experience": visible(Experience),
+    "projects": visible(Project), ... }` },
+    { n: ["site","pages","storage"], e: ["pages-site","site-storage"], h: "Redraw and remember",
+      t: "React redraws the sections with the fresh data, the theme is applied as CSS variables, and the result is cached for next time.",
+      c: `setSite(data);
+localStorage.setItem(CACHE_KEY, JSON.stringify(data));` },
+  ]},
+  { id: "theme", name: "You change a color in Admin", steps: [
+    { n: ["pages","site"], e: ["pages-site"], h: "A live preview",
+      t: "On the Appearance tab every change goes into a draft and is applied to the admin page at once with applyTheme. Nothing is saved yet.",
+      c: `useEffect(() => { if (draft) applyTheme(draft.theme); }, [draft]);` },
+    { n: ["pages","authts","content"], e: ["pages-authts","authts-content"], h: "Save changes",
+      t: "The whole settings draft is sent with your login token.",
+      c: `await sendJson("/api/settings", "PUT", draft);` },
+    { n: ["content","authpy"], e: ["content-authpy"], h: "Is it really you?",
+      t: "get_current_user checks the token's signature before save_settings runs.",
+      c: `def save_settings(data: SettingsData, ..., admin = Depends(get_current_user)):` },
+    { n: ["content","schemas"], e: ["content-schemas"], h: "Is it a real color?",
+      t: "SettingsData checks every field. 'red;} body {display:none' is not #rrggbb, so it's rejected with 422 and the admin page shows why.",
+      c: `accent: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")` },
+    { n: ["content","db","pg"], e: ["content-db","db-pg"], h: "Saved for everyone",
+      t: "The settings row is replaced. The next /api/site request, from any visitor, carries the new color.",
+      c: `row.data = data.model_dump()
+session.commit()` },
+  ]},
+  { id: "list", name: "You add an experience entry", steps: [
+    { n: ["pages","authts","content"], e: ["pages-authts","authts-content"], h: "Add new → Add",
+      t: "CollectionEditor sends the new item to the collection's path. The same editor component is used for projects, education, skills and interests.",
+      c: `await sendJson("/api/experience", "POST", draft);` },
+    { n: ["content","authpy","schemas"], e: ["content-authpy","content-schemas"], h: "Checked twice",
+      t: "First the login, then ExperienceIn: role and organisation required, lengths limited, empty tags removed.",
+      c: `class ExperienceIn(BaseModel):
+    role: str = Field(min_length=1, max_length=150)` },
+    { n: ["content","db","pg"], e: ["content-db","db-pg"], h: "Put at the end",
+      t: "The new row gets sort_order one higher than the current last one. The ↑ ↓ buttons later send the full new order of ids.",
+      c: `last = session.exec(select(func.max(model.sort_order))).one()
+item = model(**data.model_dump(), sort_order=(last or 0) + 1)` },
+  ]},
+  { id: "login", name: "You log in", steps: [
+    { n: ["pages","main"], e: ["pages-main"], h: "Username and password",
+      t: "Login.tsx sends them as form data to /api/token. At most 5 tries per minute per IP.",
+      c: `POST /api/token
+username=...&password=...` },
+    { n: ["main","db","pg"], e: ["main-db","db-pg"], h: "Find the user",
+      t: "The User row only holds a bcrypt hash, never the password.",
+      c: `user = session.exec(select(User).where(User.username == ...)).first()` },
+    { n: ["main","authpy"], e: ["main-authpy"], h: "Check and sign",
+      t: "bcrypt compares the password with the hash. If it matches, auth.py signs a token that is valid for 24 hours.",
+      c: `return {"access_token": create_access_token({"sub": user.username})}` },
+    { n: ["pages","authts","storage"], e: ["pages-authts","authts-storage"], h: "Keep the token",
+      t: "The token is saved in localStorage and you land on /admin. The nav now shows Admin and Sign out.",
+      c: `localStorage.setItem("token", data.access_token);
+navigate("/admin");` },
+  ]},
+  { id: "claude", name: "Claude adds a job for you", steps: [
+    { n: ["claude"], e: [], h: "You ask Claude",
+      t: "In Claude Code or Claude Desktop you write: 'Add my teaching assistant job at LTH, spring 2027, to the site.' Claude decides to use the add_experience tool and asks your permission.",
+      c: `add_experience(role="Teaching assistant", organisation="LTH",
+               period="Spring 2027", summary="...")` },
+    { n: ["claude","content"], e: ["claude-content"], h: "The MCP server calls the API",
+      t: "server.py sends the same request the admin page would, with the API key from its config instead of a login token.",
+      c: `POST /api/experience
+Authorization: Bearer pwk_...` },
+    { n: ["content","authpy","schemas"], e: ["content-authpy","content-schemas"], h: "Same checks as you",
+      t: "get_current_user finds the key by its hash and accepts it; ExperienceIn checks the fields. A revoked key gets 401.",
+      c: `key = session.exec(select(ApiKey).where(
+    ApiKey.key_hash == hash_api_key(token))).first()` },
+    { n: ["content","db","pg"], e: ["content-db","db-pg"], h: "Live on the site",
+      t: "The row is saved. The next visitor's /api/site request includes the new job.",
+      c: `INSERT INTO experience (role, organisation, ...) VALUES (...)` },
+  ]},
+  { id: "contact", name: "Someone sends a message", steps: [
+    { n: ["pages","main"], e: ["pages-main"], h: "The form is posted",
+      t: "3 messages per minute per IP. A fourth gets 429 and the form asks them to wait.",
+      c: `POST /api/contact
+{"name": "Ada", "email": "ada@example.com", "message": "Hi!"}` },
+    { n: ["main","resend"], e: ["main-resend"], h: "Escaped and emailed",
+      t: "ContactForm checks the fields, html.escape makes any HTML harmless, and Resend delivers it. Nothing is stored in the database.",
+      c: `message = html.escape(form_data.message)
+resend.Emails.send({ ... })` },
+  ]},
+  { id: "upload", name: "You upload a project video", steps: [
+    { n: ["pages","authts","main"], e: ["pages-authts","authts-main"], h: "Pick a file",
+      t: "MediaField sends the file to /api/media with your token.",
+      c: `const url = await uploadMedia(file);` },
+    { n: ["main","authpy"], e: ["main-authpy"], h: "Checks",
+      t: "Logged in? An image, or an .mp4/.webm video? Under 10 MB for images, 40 MB for video?",
+      c: `elif content_type in ("video/mp4", "video/webm"):
+    kind, limit = "video", MAX_VIDEO_BYTES` },
+    { n: ["main","cloud"], e: ["main-cloud"], h: "Off to Cloudinary",
+      t: "FastAPI keeps large uploads in a temporary file, which is passed straight on, so a big video never sits in the server's 512 MB of memory.",
+      c: `cloudinary.uploader.upload(file.file, resource_type="video")` },
+    { n: ["pages"], e: [], h: "Save the URL",
+      t: "The returned URL fills the 'Picture or video' field. Pressing Save stores it on the project like any other text.",
+      c: `https://res.cloudinary.com/<cloud>/video/upload/v1/abc.mp4` },
+  ]},
+];
+
+const SVGNS = "http://www.w3.org/2000/svg";
+const el = (name, attrs = {}, parent) => {
+  const e = document.createElementNS(SVGNS, name);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+};
+
+const edgeEls = {}, nodeEls = {};
+const gE = document.getElementById("edges"), gN = document.getElementById("nodes");
+for (const [id, e] of Object.entries(EDGES)) {
+  const g = el("g", { class: "edge" }, gE);
+  el("path", { d: e.d, "marker-end": "url(#arrow)" }, g);
+  const t = el("text", { x: e.lx, y: e.ly, "text-anchor": e.a }, g);
+  t.textContent = e.l;
+  if (!e.l) t.remove();
+  edgeEls[id] = g;
+}
+for (const [id, n] of Object.entries(NODES)) {
+  const g = el("g", { class: "node", tabindex: "0", role: "button", "aria-label": `${n.t}: ${n.s}` }, gN);
+  el("rect", { x: n.x, y: n.y, width: n.w, height: 56, rx: 7 }, g);
+  el("text", { class: "t", x: n.x + 14, y: n.y + 24 }, g).textContent = n.t;
+  el("text", { class: "s", x: n.x + 14, y: n.y + 42 }, g).textContent = n.s;
+  g.addEventListener("click", () => showNode(id));
+  g.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); showNode(id); } });
+  nodeEls[id] = g;
+}
+
+function highlight(nodes, edges) {
+  const any = nodes.length > 0;
+  for (const [id, g] of Object.entries(nodeEls)) {
+    g.classList.toggle("hot", nodes.includes(id));
+    g.classList.toggle("dim", any && !nodes.includes(id));
+  }
+  for (const [id, g] of Object.entries(edgeEls)) {
+    const hot = edges.includes(id);
+    g.classList.toggle("hot", hot);
+    g.classList.toggle("dim", any && !hot);
+    g.querySelector("path").setAttribute("marker-end", hot ? "url(#arrowHot)" : "url(#arrow)");
+  }
+}
+
+const panel = document.getElementById("panel");
+function h(tag, text, cls) { const e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+
+let flowIdx = 0, stepIdx = 0;
+const flowButtons = document.getElementById("flowButtons");
+FLOWS.forEach((f, i) => {
+  const b = h("button", f.name);
+  b.type = "button";
+  b.addEventListener("click", () => { flowIdx = i; stepIdx = 0; renderStep(); });
+  flowButtons.appendChild(b);
+});
+
+function setPressed(i) {
+  [...flowButtons.children].forEach((b, j) => b.setAttribute("aria-pressed", String(j === i)));
+}
+
+function renderStep() {
+  const f = FLOWS[flowIdx], s = f.steps[stepIdx];
+  setPressed(flowIdx);
+  highlight(s.n, s.e);
+  panel.replaceChildren();
+  panel.appendChild(h("span", f.name, "label"));
+  panel.appendChild(h("h2", s.h));
+  panel.appendChild(h("p", s.t));
+  panel.appendChild(h("pre", s.c));
+  const nav = h("div", null, "stepper");
+  const prev = h("button", "← Back"); prev.type = "button"; prev.disabled = stepIdx === 0;
+  const next = h("button", stepIdx === f.steps.length - 1 ? "Done" : "Next →"); next.type = "button";
+  next.disabled = stepIdx === f.steps.length - 1;
+  prev.addEventListener("click", () => { stepIdx--; renderStep(); });
+  next.addEventListener("click", () => { stepIdx++; renderStep(); });
+  const dots = h("div", null, "dots");
+  f.steps.forEach((_, j) => dots.appendChild(h("span", null, j === stepIdx ? "on" : "")));
+  nav.append(prev, next, h("span", `Step ${stepIdx + 1} of ${f.steps.length}`, "count"), dots);
+  panel.appendChild(nav);
+}
+
+function showNode(id) {
+  const n = NODES[id], info = NODE_INFO[id];
+  setPressed(-1);
+  const edges = Object.keys(EDGES).filter((k) => k.split("-").includes(id));
+  const neighbours = new Set([id]);
+  edges.forEach((k) => k.split("-").forEach((x) => neighbours.add(x)));
+  highlight([...neighbours], edges);
+  panel.replaceChildren();
+  panel.appendChild(h("span", "Part of the system", "label"));
+  panel.appendChild(h("h2", n.t));
+  panel.appendChild(h("span", info.where, "where"));
+  panel.appendChild(h("p", info.text));
+  if (edges.length) {
+    panel.appendChild(h("span", "Connected to", "label"));
+    const ul = h("ul");
+    edges.forEach((k) => {
+      const other = k.split("-").find((x) => x !== id);
+      ul.appendChild(h("li", `${NODES[other].t} (${EDGES[k].l})`));
+    });
+    panel.appendChild(ul);
+  }
+  panel.appendChild(h("pre", info.code));
+}
+
+renderStep();
+</script>

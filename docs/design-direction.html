@@ -1,0 +1,199 @@
+<title>Website Redesign Direction</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Public+Sans:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&family=Unbounded:wght@300;400;500&display=swap">
+<style>
+/* Layout: a single dark board. The proposed hero at full width with a font switcher, then palette, then the section plan. Deliberately dark-only: it previews a dark site. */
+:root {
+  --horizon: #06070a;     /* page background: event horizon */
+  --void: #0d0f14;        /* raised surfaces */
+  --photon: #ece7dc;      /* main text: warm starlight */
+  --dust: #8d897f;        /* secondary text */
+  --redshift: #e8955a;    /* accent: receding side of the accretion disk */
+  --blueshift: #8fb0d8;   /* second accent, used rarely: approaching side */
+  --rule: rgba(236, 231, 220, 0.14);
+  --display: "Instrument Serif", Georgia, serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --name-size: clamp(54px, 9vw, 120px);
+  --name-weight: 400;
+  --name-track: -0.02em;
+  color-scheme: dark;
+}
+:root[data-font="panel"] {
+  --display: "Unbounded", "Arial Black", sans-serif;
+  --name-size: clamp(40px, 6.6vw, 88px); --name-weight: 300; --name-track: -0.03em;
+}
+:root[data-font="engineer"] {
+  --display: "Space Grotesk", "Segoe UI", sans-serif;
+  --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --name-size: clamp(50px, 8vw, 108px); --name-weight: 500; --name-track: -0.04em;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--horizon); color: var(--photon);
+  font: 300 16px/1.7 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 1200px; margin: 0 auto; display: grid; gap: 56px; }
+.kicker { font: 500 12px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dust); }
+h2 { font: var(--name-weight) clamp(28px, 3.4vw, 40px)/1.1 var(--display); letter-spacing: var(--name-track); margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 64ch; }
+.intro { display: grid; gap: 12px; }
+.intro p { color: var(--dust); }
+
+/* font switcher */
+.switch { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--rule); width: fit-content; max-width: 100%; }
+.switch button {
+  background: transparent; color: var(--dust); border: 0; border-right: 1px solid var(--rule);
+  padding: 12px 18px; cursor: pointer; text-align: left; display: grid; gap: 2px;
+  font: 400 14px/1.3 var(--body);
+}
+.switch button:last-child { border-right: 0; }
+.switch button small { font: 400 11px var(--mono); color: var(--dust); }
+.switch button[aria-pressed="true"] { color: var(--horizon); background: var(--photon); }
+.switch button[aria-pressed="true"] small { color: #4a463f; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--redshift); outline-offset: 3px; }
+
+/* hero mock */
+.hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  min-height: 600px; display: grid; grid-template-rows: auto 1fr auto;
+  border: 1px solid var(--rule);
+}
+.hero video, .hero .fallback { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; opacity: 0.75; }
+.hero .fallback { background: radial-gradient(circle at 68% 50%, #000 0 9%, #e8955a33 10% 13%, transparent 30%), var(--horizon); }
+.hero .shade {
+  position: absolute; inset: 0; z-index: -1;
+  background:
+    linear-gradient(to top, var(--horizon), transparent 30%),
+    linear-gradient(90deg, rgba(6,7,10,0.94), rgba(6,7,10,0.72) 38%, rgba(6,7,10,0.1) 75%, transparent);
+}
+.nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px clamp(18px, 4vw, 48px); flex-wrap: wrap; }
+.mark { font: 500 15px var(--mono); letter-spacing: 0.06em; }
+.nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(14px, 2.4vw, 30px); flex-wrap: wrap; font-size: 14px; }
+.nav a { color: var(--photon); text-decoration: none; opacity: 0.78; }
+.nav a:hover { opacity: 1; color: var(--redshift); }
+.content { align-self: center; padding: 24px clamp(18px, 4vw, 48px); display: grid; gap: 22px; max-width: 760px; }
+.eyebrow { font: 400 14px var(--mono); color: var(--redshift); letter-spacing: 0.02em; }
+.name { margin: 0; font: var(--name-weight) var(--name-size)/0.98 var(--display); letter-spacing: var(--name-track); }
+.name .dot { color: var(--redshift); }
+.lede { color: #c9c3b7; font-size: 18px; line-height: 1.75; max-width: 46ch; }
+.foot {
+  display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  margin: 0 clamp(18px, 4vw, 48px); padding: 18px 0 22px; border-top: 1px solid var(--rule);
+  font-size: 13.5px; color: var(--dust);
+}
+.foot .sep { color: var(--redshift); margin-inline: 10px; }
+.readout {
+  position: absolute; right: clamp(18px, 4vw, 48px); bottom: 84px; text-align: right;
+  font: 400 11.5px/1.7 var(--mono); color: var(--dust); letter-spacing: 0.03em;
+}
+.readout b { color: var(--blueshift); font-weight: 400; }
+@media (max-width: 640px) { .readout { display: none; } .hero { min-height: 560px; } }
+
+/* palette */
+.palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0; border-top: 1px solid var(--rule); }
+.sw { padding: 16px 16px 18px 0; display: grid; gap: 8px; align-content: start; }
+.chip { height: 64px; border: 1px solid var(--rule); }
+.sw strong { font: 500 14px var(--body); }
+.sw code { font: 400 12px var(--mono); color: var(--dust); }
+.sw span { font-size: 13px; color: var(--dust); line-height: 1.5; }
+
+/* section plan */
+.plan { display: grid; gap: 0; }
+.row { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr) minmax(0, 260px); gap: 24px; padding: 18px 0; border-top: 1px solid var(--rule); }
+.row h3 { margin: 0; font: var(--name-weight) 22px/1.2 var(--display); letter-spacing: var(--name-track); }
+.row p { color: #c9c3b7; font-size: 15px; }
+.row .edit { font: 400 12px/1.6 var(--mono); color: var(--blueshift); }
+.row.cut h3, .row.cut p { color: var(--dust); text-decoration: line-through; text-decoration-color: var(--redshift); }
+@media (max-width: 760px) { .row { grid-template-columns: 1fr; gap: 6px; } }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px; }
+.notes div { display: grid; gap: 8px; align-content: start; }
+.notes h3 { margin: 0; font: 500 15px var(--body); }
+.notes p { color: var(--dust); font-size: 14.5px; }
+@media (prefers-reduced-motion: reduce) { .hero video { display: none; } }
+</style>
+
+<div class="wrap">
+  <section class="intro">
+    <span class="kicker">Redesign plan · step 1 of the frontend refactor</span>
+    <h2>The black hole sets the mood. Everything else stays out of its way.</h2>
+    <p>The layout borrows from Axel Dovskog's site: a left-aligned name over a full-bleed picture, plain copy, and a CV that reads top to bottom. The colors come from your renderer instead of a stock palette. Switch the fonts below to compare the three options on the real hero.</p>
+  </section>
+
+  <section style="display:grid; gap:16px">
+    <div class="switch" id="switch" role="group" aria-label="Font pairing">
+      <button type="button" data-font="journal" aria-pressed="true">A · Journal<small>Instrument Serif + Plex Sans</small></button>
+      <button type="button" data-font="panel" aria-pressed="false">B · Instrument panel<small>Unbounded + Plex Sans</small></button>
+      <button type="button" data-font="engineer" aria-pressed="false">C · Engineer<small>Space Grotesk + Public Sans</small></button>
+    </div>
+
+    <div class="hero">
+      <div class="fallback" aria-hidden="true"></div>
+      <video src="BlackHole_preview.mp4" autoplay muted loop playsinline aria-hidden="true"></video>
+      <div class="shade" aria-hidden="true"></div>
+      <nav class="nav">
+        <span class="mark">CJC</span>
+        <ul><li><a href="#x">Work</a></li><li><a href="#x">Projects</a></li><li><a href="#x">Tools</a></li><li><a href="#x">Contact</a></li></ul>
+      </nav>
+      <div class="content">
+        <span class="eyebrow">Computer Science &amp; Engineering · LTH</span>
+        <h1 class="name">Christian J.<br>Carlson<span class="dot">.</span></h1>
+        <p class="lede">Third-year student in Lund. I like maths, algorithms and getting physics to run in real time. The black hole behind this text is one of my projects.</p>
+      </div>
+      <div class="readout" aria-hidden="true">Schwarzschild metric · RK4 integration<br><b>10 000 photons</b> · ~60 fps · C++ / raylib</div>
+      <div class="foot">
+        <span>Datateknik, LTH<span class="sep">/</span>expected 2029<span class="sep">/</span>Lund, Sweden</span>
+        <span>Scroll down ↓</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:grid; gap:16px">
+    <span class="kicker">Palette · taken from the renderer, editable in Admin</span>
+    <div class="palette">
+      <div class="sw"><div class="chip" style="background:#06070a"></div><strong>Event horizon</strong><code>#06070a</code><span>Page background. Near-black with a cold tint, not flat #000.</span></div>
+      <div class="sw"><div class="chip" style="background:#ece7dc"></div><strong>Starlight</strong><code>#ece7dc</code><span>Main text. Warm white so it doesn't glare against the video.</span></div>
+      <div class="sw"><div class="chip" style="background:#8d897f"></div><strong>Dust</strong><code>#8d897f</code><span>Dates, labels, secondary text.</span></div>
+      <div class="sw"><div class="chip" style="background:#e8955a"></div><strong>Redshift</strong><code>#e8955a</code><span>The accent: links, the period after your name, active states. Used sparingly.</span></div>
+      <div class="sw"><div class="chip" style="background:#8fb0d8"></div><strong>Blueshift</strong><code>#8fb0d8</code><span>Rare second accent. The disk's approaching side looks bluer (Doppler), the receding side redder.</span></div>
+    </div>
+  </section>
+
+  <section style="display:grid; gap:12px">
+    <span class="kicker">Homepage sections, top to bottom · no numbering</span>
+    <div class="plan">
+      <div class="row"><h3>Hero</h3><p>Shown above. As you scroll past it, the video fades to a dim background instead of staying bright behind everything.</p><span class="edit">Admin: eyebrow, name, intro, footer line, readout text, video on/off + brightness</span></div>
+      <div class="row"><h3>About</h3><p>A short bio and the tools you use, grouped by honest skill level ("use daily", "comfortable", "learning"), like Axel's "Really really good / Pretty great".</p><span class="edit">Admin: bio, skill groups and their items</span></div>
+      <div class="row"><h3>Interests</h3><p>Books, films, music. Hidden until you fill it in. Includes a "Skip to experience" button like Axel's.</p><span class="edit">Admin: categories + entries, section visible/hidden</span></div>
+      <div class="row"><h3>Experience</h3><p>Handshake AI (summer 2026), ARKAD coordinator and host (2024–2026), ÅmaAB (2022–2026). Each row shows dates, place, and one or two plain sentences.</p><span class="edit">Admin: add / edit / reorder / hide entries</span></div>
+      <div class="row"><h3>Education</h3><p>LTH Datateknik, expected 2029, and your completed courses from the CV (Algorithms, Data Structures and Complexity, Functional Programming, Linear Algebra and the rest).</p><span class="edit">Admin: schools, courses, notes</span></div>
+      <div class="row"><h3>Projects</h3><p>The black hole renderer gets the big slot with its video. Below it: this site, the algorithm lab, Chronos, Complex, ML from scratch, and the horse racing game for your dad. The full list stays on the Projects page.</p><span class="edit">Admin: everything, plus image/video, order, featured</span></div>
+      <div class="row"><h3>Contact</h3><p>The form, plus email, GitHub and LinkedIn. The GitHub/Spotify status moves here as a quiet line instead of a bar across the top of every page.</p><span class="edit">Admin: links, form intro text</span></div>
+      <div class="row cut"><h3>Life gallery</h3><p>Removed: the page, its admin tab, and its API endpoints.</p><span class="edit"></span></div>
+    </div>
+  </section>
+
+  <section class="notes">
+    <div><h3>Editable, not hard-coded</h3><p>Every word, color and font above lives in the database. Colors and fonts become CSS variables the whole site reads, so changing a color in Admin recolors the site. Sections can be hidden and reordered.</p></div>
+    <div><h3>Login screen</h3><p>Stays terminal-style, but toned down: no blinking icon, no "ACCESS DENIED" theatrics, no "Execute_Login". It will use the new fonts and colors.</p></div>
+    <div><h3>Motion</h3><p>One designed moment: the hero video dims and drifts slightly as you scroll away. Links and project rows get a small hover shift in the accent color. No fade-in-on-scroll on every section.</p></div>
+    <div><h3>Lighter page</h3><p>The video gets re-encoded smaller and pauses when it's off screen. Your profile photo gets resized from 3.8 MB to around 100 KB.</p></div>
+  </section>
+</div>
+
+<script>
+const sw = document.getElementById("switch");
+sw.addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  document.documentElement.dataset.font = b.dataset.font;
+  sw.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+});
+</script>

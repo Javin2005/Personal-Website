@@ -1,90 +1,126 @@
 @import "tailwindcss";
-html, body {
-  margin: 0;
-  padding: 0;
-  background-color: #020617;
+
+/*
+  How theming works
+  -----------------
+  1. The variables in :root below are the default colors and fonts.
+  2. When the site loads, site/theme.ts overwrites them with the colors
+     and fonts saved in the admin page.
+  3. @theme inline tells Tailwind to make classes from these variables,
+     so `bg-bg`, `text-muted`, `border-accent`, `font-display` and so on
+     all follow whatever the admin picked.
+  Opacity works too: `border-text/15` = the text color at 15% opacity.
+*/
+:root {
+  --bg: #06070a;
+  --surface: #0d0f14;
+  --text: #ece7dc;
+  --muted: #8d897f;
+  --accent: #e8955a;
+  --accent2: #8fb0d8;
+  --font-display-family: "Unbounded", "Segoe UI", system-ui, sans-serif;
+  --font-body-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  /* 0 at the top of the page, 1 once the hero is scrolled past (set in BlackHoleBackground.tsx) */
+  --scroll: 0;
+  color-scheme: dark;
 }
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent2: var(--accent2);
+  --font-display: var(--font-display-family);
+  --font-sans: var(--font-body-family);
+  --font-mono: var(--font-mono-family);
+}
+
 html {
   scroll-behavior: smooth;
-}
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  background: var(--bg);
 }
 
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient-shift 5s ease infinite;
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body-family);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
 }
 
-@keyframes flicker {
-  0% { opacity: 0.27861;}
-  5% { opacity: 0.34769;}
-  10% { opacity: 0.23604;}
-  100% { opacity: 0.43928;}
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
-.crt-overlay::before {
-  content: " ";
-  display: block;
-  position: absolute;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-              linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  z-index: 2;
-  background-size: 100% 2px, 3px 100%;
-  pointer-events: none;
+h1, h2, h3 {
+  text-wrap: balance;
 }
 
-.scanline {
-  width: 100%;
-  height: 100px;
-  z-index: 3;
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(0, 0, 0, 0) 100%);
-  opacity: 0.1;
-  position: absolute;
-  bottom: 100%;
-  animation: scanline 6s linear infinite;
-}
-
-@keyframes scanline {
-  0% { bottom: 100%; }
-  100% { bottom: -100%; }
-}
-
+/* Sections are scrolled to from the nav; leave room for the sticky nav. */
 section[id] {
-  scroll-margin-top: 100px;
+  scroll-margin-top: 88px;
 }
 
-
-.bg-noise {
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  right: -50%;
-  bottom: -50%;
-  width: 200%;
-  height: 200vh;
-  background: transparent url('http://assets.iceable.com/img/noise-transparent.png') repeat;
-  background-repeat: repeat;
-  animation: bg-animation 0.2s infinite;
-  opacity: .05; 
-  visibility: visible;
-  z-index: 9999;
-  pointer-events: none;
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
-@keyframes bg-animation {
-    0% { transform: translate(0,0) }
-    10% { transform: translate(-5%,-5%) }
-    20% { transform: translate(-10%,5%) }
-    30% { transform: translate(5%,-10%) }
-    40% { transform: translate(-5%,15%) }
-    50% { transform: translate(-10%,5%) }
-    60% { transform: translate(15%,0) }
-    70% { transform: translate(0,10%) }
-    80% { transform: translate(-15%,0) }
-    90% { transform: translate(10%,5%) }
-    100% { transform: translate(5%,0) }
+/* A link with an arrow that nudges on hover, used for "Code ↗", "All projects →". */
+.arrow-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.arrow-link .arrow {
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+.arrow-link:hover {
+  color: var(--accent);
+}
+.arrow-link:hover .arrow {
+  transform: translate(3px, -2px);
+}
+.arrow-link.down:hover .arrow {
+  transform: translateY(3px);
+}
+
+/* Form fields: a single underline instead of a filled box. */
+.field {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
+  color: var(--text);
+  padding: 10px 0;
+  font: inherit;
+  transition: border-color 0.2s;
+}
+.field:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+.field::placeholder {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

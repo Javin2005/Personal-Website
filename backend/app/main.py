@@ -1,26 +1,35 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
+"""The FastAPI app: wires everything together.
+
+- content.py   settings, projects, experience, education, skills, interests
+- status.py    GitHub / Spotify status line
+- auth.py      passwords and login tokens
+- this file    app setup, about, contact form, login, media uploads
+"""
+import html
+import os
 from contextlib import asynccontextmanager
-from base64 import b64encode
-from sqlmodel import Session, select, desc
-from typing import List
-
-from .auth import verify_password, create_access_token, get_password_hash, get_current_user
-
-from .database import create_db_and_tables, get_session
-from .models import Project, About, CreativeItem, ContactForm, User, LifePost
 
 import cloudinary
 import cloudinary.uploader
-
-
-import os
 import resend
-import httpx
-import shutil
 from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from sqlmodel import Session, select
+
+from .apikeys import router as apikeys_router
+from .auth import DUMMY_HASH, create_access_token, get_current_user, verify_password
+from .content import collection_routers, ensure_settings_row
+from .content import router as content_router
+from .database import get_session, run_migrations
+from .models import About, ContactForm, User
+from .schemas import AboutUpdate
+from .status import router as status_router
 
 load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
@@ -28,331 +37,168 @@ resend.api_key = os.getenv("RESEND_API_KEY")
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
     api_key=os.getenv("CLOUDINARY_API_KEY"),
-    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
 )
-
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_db_and_tables()
+    # Runs once when the server starts: update the database structure,
+    # then make sure the settings row exists.
+    run_migrations()
+    ensure_settings_row()
     yield
 
 app = FastAPI(lifespan=lifespan)
 
 
+def client_ip(request: Request) -> str:
+    """The visitor's IP address, used as the rate-limit key.
+
+    On Render the app sits behind a proxy, so request.client.host is the
+    proxy's IP and every visitor would share ONE rate-limit bucket. The proxy
+    appends the real client IP to X-Forwarded-For; we take the last entry
+    (the one our proxy added) because earlier entries can be faked by the client.
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[-1].strip()
+    return get_remote_address(request)
+
+
+limiter = Limiter(key_func=client_ip)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 origins = [
-    "http://localhost:5173", 
+    "http://localhost:5173",
     "https://christiancarlson.vercel.app",
     "https://www.javincarlson.com",
-    "https://javincarlson.com"
+    "https://javincarlson.com",
 ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"http://localhost:\d+",  # any local dev server port
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.include_router(content_router)
+for r in collection_routers:
+    app.include_router(r)
+app.include_router(status_router)
+app.include_router(apikeys_router)
+
 
 @app.get("/")
 async def read_root():
-    return {"status": "Database Online", "student": "LTH"}
+    return {"status": "ok"}
 
 
-@app.get("/api/projects", response_model=List[Project])
-def get_all_projects(session: Session = Depends(get_session)):
-    projects = session.exec(select(Project)).all()
-    return projects
-
-
-@app.get("/api/projects/featured", response_model=List[Project])
-def get_featured_projects(session: Session = Depends(get_session)):
-    statement = select(Project).where(Project.featured == True)
-    projects = session.exec(statement).all()
-    return projects
-
-
-@app.post("/api/projects", response_model=Project)
-def create_project(project: Project, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
-    session.add(project)
-    session.commit()
-    session.refresh(project)
-    return project
-
-@app.put("/api/projects/{project_id}", response_model=Project)
-def update_project(project_id: int, updated_project: Project, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
-    db_project = session.get(Project, project_id)
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    project_data = updated_project.model_dump(exclude_unset=True)
-    for key, value in project_data.items():
-        setattr(db_project, key, value)
-
-    session.add(db_project)
-    session.commit()
-    session.refresh(db_project)
-    return db_project
-
-@app.delete("/api/projects/{project_id}")
-def delete_project(project_id: int, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
-    db_project = session.get(Project, project_id)
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    session.delete(db_project)
-    session.commit()
-    return {"status": "Project deleted"}
+# ---------------------------------------------------------------- about
 
 @app.get("/api/about", response_model=About)
 def get_about(session: Session = Depends(get_session)):
-    statement = select(About)
-    about = session.exec(statement).first()
+    about = session.exec(select(About)).first()
     if not about:
         raise HTTPException(status_code=404, detail="About data not found")
     return about
 
+
 @app.put("/api/about", response_model=About)
 def update_about(
-    updated_about: About, 
-    session: Session = Depends(get_session), 
-    admin: str = Depends(get_current_user)
+    updated_about: AboutUpdate,
+    session: Session = Depends(get_session),
+    admin: str = Depends(get_current_user),
 ):
-    db_about = session.exec(select(About)).first()
-    if not db_about:
-        raise HTTPException(status_code=404, detail="About data not found")
-    
-
-
-    about_data = updated_about.model_dump(exclude={"id"})
-    
-
-    for key, value in about_data.items():
+    db_about = session.exec(select(About)).first() or About(**updated_about.model_dump())
+    for key, value in updated_about.model_dump().items():
         setattr(db_about, key, value)
-        
     session.add(db_about)
     session.commit()
     session.refresh(db_about)
     return db_about
 
 
+# ---------------------------------------------------------------- contact
+
 @app.post("/api/contact")
-async def handle_contact(form_data: ContactForm):
+@limiter.limit("3/minute")
+async def handle_contact(request: Request, form_data: ContactForm):
+    name = html.escape(form_data.name)
+    sender = html.escape(form_data.email)
+    message = html.escape(form_data.message).replace("\n", "<br>")
     try:
         email = resend.Emails.send({
             "from": "onboarding@resend.dev",
             "to": "christiancarlsonwork@gmail.com",
-            "subject": f"New Message from {form_data.name}",
+            "reply_to": form_data.email,
+            "subject": f"New Message from {form_data.name.replace(chr(10), ' ')}",
             "html": f"""
                 <h3>New Portfolio Message</h3>
-                <p><strong>From:</strong> {form_data.name} ({form_data.email})</p>
+                <p><strong>From:</strong> {name} ({sender})</p>
                 <p><strong>Message:</strong></p>
-                <p>{form_data.message}</p>
+                <p>{message}</p>
             """,
         })
         return {"status": "success", "id": email["id"]}
-
     except Exception as e:
         print(f"Error sending email: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/creative", response_model=List[CreativeItem])
-def get_creative(session: Session = Depends(get_session)):
-    items = session.exec(select(CreativeItem)).all()
-    return items
-
-@app.get("/api/life", response_model=List[LifePost])
-def get_life_posts(session: Session = Depends(get_session)):
-    statement = select(LifePost).order_by(desc(LifePost.created_at))
-    return session.exec(statement).all()
+        raise HTTPException(status_code=500, detail="Could not send message")
 
 
-@app.post("/api/life")
-async def create_life_post(
-    title: str = Form(...),
-    caption: str = Form(...),
-    category: str = Form(...),
-    image: UploadFile = File(...),
-    session: Session = Depends(get_session),
-    current_user: str = Depends(get_current_user)
-):
+# ---------------------------------------------------------------- media uploads
+
+MAX_IMAGE_BYTES = 10 * 1024 * 1024   # 10 MB
+MAX_VIDEO_BYTES = 40 * 1024 * 1024   # 40 MB
+
+
+@app.post("/api/media")
+async def upload_media(file: UploadFile = File(...), admin: str = Depends(get_current_user)):
+    """Upload an image or video to Cloudinary and return its URL.
+
+    The admin page uses this for project media and the profile picture,
+    then saves the returned URL like any other text field.
+    """
+    content_type = file.content_type or ""
+    if content_type.startswith("image/"):
+        kind, limit = "image", MAX_IMAGE_BYTES
+    elif content_type in ("video/mp4", "video/webm"):
+        kind, limit = "video", MAX_VIDEO_BYTES
+    else:
+        raise HTTPException(status_code=400, detail="Upload an image, or an .mp4/.webm video")
+
+    if file.size is not None and file.size > limit:
+        raise HTTPException(status_code=413, detail=f"File is larger than {limit // (1024 * 1024)} MB")
+
     try:
-
-        upload_result = cloudinary.uploader.upload(image.file)
-        
-
-        db_url = upload_result.get("secure_url")
-
-
-        new_post = LifePost(
-            title=title,
-            caption=caption,
-            category=category,
-            image_url=db_url 
+        # FastAPI keeps big uploads in a temporary file on disk, and we pass
+        # that file straight on, so a large video never sits in RAM.
+        # The Cloudinary SDK is blocking, so it runs in a thread.
+        result = await run_in_threadpool(
+            cloudinary.uploader.upload, file.file, resource_type=kind
         )
-
-        session.add(new_post)
-        session.commit()
-        session.refresh(new_post)
-        return new_post
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
+        print(f"Cloudinary upload failed: {e}")
+        raise HTTPException(status_code=502, detail="Upload failed")
+
+    return {"url": result["secure_url"], "kind": kind}
 
 
-@app.delete("/api/life/{post_id}")
-def delete_life_post(post_id: int, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
-    db_post = session.get(LifePost, post_id)
-    if not db_post:
-        raise HTTPException(status_code=404, detail="Post not found")
-    
-    session.delete(db_post)
-    session.commit()
-    return{"status": "Post deleted"}
-
+# ---------------------------------------------------------------- login
 
 @app.post("/api/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
-    statement = select(User).where(User.username == form_data.username)
-    user = session.exec(statement).first()
+@limiter.limit("5/minute")
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    user = session.exec(select(User).where(User.username == form_data.username)).first()
 
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    # Check a password even when the user doesn't exist, so the response
+    # time doesn't reveal which usernames are real.
+    password_ok = verify_password(form_data.password, user.hashed_password if user else DUMMY_HASH)
+    if not user or not password_ok:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
-    
+
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
-
-
-@app.get("/api/status/github")
-async def get_github_status():
-    username = "Javin2005"
-    token = os.getenv("GITHUB_TOKEN")
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "User-Agent": "javincarlson-portfolio",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            # 1. Check recent Events API
-            events_res = await client.get(
-                f"https://api.github.com/users/{username}/events",
-                headers=headers,
-            )
-            if events_res.status_code == 200:
-                events = events_res.json()
-                push_event = (
-                    next((e for e in events if e.get("type") == "PushEvent"), None)
-                    if isinstance(events, list)
-                    else None
-                )
-                if push_event:
-                    repo_full_name = push_event.get("repo", {}).get("name", "")
-                    repo_name = repo_full_name.split("/")[-1] or "unknown"
-                    payload = push_event.get("payload", {})
-                    head_sha = payload.get("head")
-
-                    if repo_full_name and head_sha:
-                        commit_res = await client.get(
-                            f"https://api.github.com/repos/{repo_full_name}/commits/{head_sha}",
-                            headers=headers,
-                        )
-                        if commit_res.status_code == 200:
-                            msg = commit_res.json().get("commit", {}).get("message", "")
-                            if msg:
-                                return {
-                                    "repo": repo_name,
-                                    "message": msg.splitlines()[0],
-                                    "active": True,
-                                }
-
-                    ref = payload.get("ref", "main").split("/")[-1]
-                    return {
-                        "repo": repo_name,
-                        "message": f"Pushed to {ref}",
-                        "active": True,
-                    }
-            else:
-                print(f"GitHub Events API {events_res.status_code}: {events_res.text}")
-
-            # 2. Fallback if no push events in the last 30 days
-            repos_res = await client.get(
-                f"https://api.github.com/users/{username}/repos?sort=pushed&per_page=1",
-                headers=headers,
-            )
-            if repos_res.status_code == 200:
-                repos = repos_res.json()
-                if isinstance(repos, list) and repos:
-                    repo_full_name = repos[0]["full_name"]
-                    repo_name = repos[0]["name"]
-                    commits_res = await client.get(
-                        f"https://api.github.com/repos/{repo_full_name}/commits?per_page=1",
-                        headers=headers,
-                    )
-                    if commits_res.status_code == 200:
-                        commits = commits_res.json()
-                        if isinstance(commits, list) and commits:
-                            msg = commits[0].get("commit", {}).get("message", "Updated files")
-                            return {
-                                "repo": repo_name,
-                                "message": msg.splitlines()[0],
-                                "active": True,
-                            }
-        except Exception as e:
-            print(f"GitHub API Error: {e}")
-
-    return {"active": False}
-
-
-@app.get("/api/status/spotify")
-async def get_spotify_status():
-    client_id = os.getenv("SPOTIFY_CLIENT_ID")
-    client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
-    refresh_token = os.getenv("SPOTIFY_REFRESH_TOKEN")
-
-
-    if not all([client_id, client_secret, refresh_token]):
-        return {"active": False}
-
-    async with httpx.AsyncClient() as client:
-        try:
-            auth_str = f"{client_id}:{client_secret}"
-            b64_auth = b64encode(auth_str.encode()).decode()
-
-            token_url = "https://accounts.spotify.com/api/token"
-            token_data = {
-                "grant_type": "refresh_token",
-                "refresh_token": refresh_token
-            }
-            token_headers = {
-                "Authorization": f"Basic {b64_auth}",
-                "Content-Type": "application/x-www-form-urlencoded"
-            }
-
-            token_res = await client.post(token_url, data=token_data, 
-                                          headers=token_headers)
-            access_token = token_res.json().get("access_token")
-
-            playback_url = "https://api.spotify.com/v1/me/player/currently-playing"
-            headers = {"Authorization": f"Bearer {access_token}"}
-
-            resp = await client.get(playback_url, headers=headers)
-
-            if resp.status_code == 204:
-                return {"active": False, "message": "Nothing playing"}
-            
-            data = resp.json()
-            if data.get("is_playing"):
-                return {
-                    "active": True,
-                    "track": data["item"] ["name"],
-                    "artist": data["item"] ["artists"] [0] ["name"],
-                    "link": data["item"] ["external_urls"] ["spotify"]
-                }
-        except Exception as e:
-            print(f"Spotify API Error: {e}")
-    return {"active": False}

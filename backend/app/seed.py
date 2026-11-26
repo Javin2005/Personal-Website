@@ -1,92 +1,100 @@
-import os
-import json
-from sqlmodel import Session, SQLModel
-from .database import engine 
-from .models import Project, About, CreativeItem, User, LifePost
-from .auth import get_password_hash
-from dotenv import load_dotenv
+"""Fill the database with the starting content from default_content.py.
 
+    poetry run python -m app.seed              # safe: only adds what's missing
+    poetry run python -m app.seed --refresh    # also overwrite About text and
+                                               # project descriptions
+
+What "only adds what's missing" means:
+- the admin user is created if it doesn't exist (from ADMIN_USERNAME /
+  ADMIN_PASSWORD in .env)
+- About is created if there is none
+- experience, education, skills and interests are filled only if empty
+- each project is added unless a project with the same GitHub repo exists
+
+Run it against the live database by pointing DATABASE_URL in your .env at
+Supabase while you run it.
+"""
+import os
+import sys
+
+from dotenv import load_dotenv
+from sqlmodel import Session, select
+
+from . import default_content as content
+from .auth import get_password_hash
+from .database import engine, run_migrations
+from .models import About, Education, Experience, Project, SkillGroup, User
 
 load_dotenv()
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
 
-def migrate_data():
+def repo_name(url):
+    return (url or "").rstrip("/").split("/")[-1].lower()
 
-    print("Creating tables in the target database...")
-    SQLModel.metadata.create_all(engine)
 
-    with open("app/data.json", "r") as file:
-        data = json.load(file)
+def fill_if_empty(session, model, rows, label):
+    if session.exec(select(model)).first():
+        print(f"  {label}: already has content, left alone")
+        return
+    for position, row in enumerate(rows):
+        session.add(model(**row, sort_order=position))
+    print(f"  {label}: added {len(rows)}")
+
+
+def seed(refresh: bool = False):
+    print("Updating database structure...")
+    run_migrations()
 
     with Session(engine) as session:
-        print("Migrating About section...")
-        about_data = data["about"]
-        db_about = About(
-            name=about_data["name"],
-            title=about_data["title"],
-            bio=about_data["bio"],
-            profile_pic=about_data["profile_pic"],
-            skills=about_data["skills"],
-            socials=about_data["socials"]
-        )
-        session.add(db_about)
-
-        print("Migrating Projects...")
-        for p in data["projects"]:
-            db_project = Project(
-                title=p["title"],
-                description=p["description"],
-                tech_stack=p["tech_stack"],
-                github_url=p["github_url"],
-                featured=p["featured"],
-                category=p["category"],
-                difficulty=p["difficulty"]
-            )
-            session.add(db_project)
-
-        print("Migrating Creative items...")
-        for c in data["creative"]:
-            db_creative = CreativeItem(
-                title=c["title"],
-                description=c["description"],
-                tech=c["tech"],
-                video_path=c["video_path"]
-            )
-            session.add(db_creative)
-
-        print("Creating Admin User...")
-        admin_username = os.getenv("ADMIN_USERNAME")
-        admin_password = os.getenv("ADMIN_PASSWORD")
-
-        if admin_username and admin_password:
-            admin_user = User(
-                username=admin_username,
-                hashed_password=get_password_hash(admin_password)
-            )
-            session.add(admin_user)
+        username = os.getenv("ADMIN_USERNAME")
+        password = os.getenv("ADMIN_PASSWORD")
+        if username and password:
+            if not session.exec(select(User).where(User.username == username)).first():
+                session.add(User(username=username, hashed_password=get_password_hash(password)))
+                print("  admin user: created")
+            else:
+                print("  admin user: exists")
         else:
-            print("WARNING: Admin credentials not found in .env!")
+            print("  admin user: ADMIN_USERNAME / ADMIN_PASSWORD not set in .env, skipped")
 
-        print("Migrating Life Posts...")
-        test_posts = [
-            {"title": "Morning Coffee", "caption": "Lund feels cozy today.", "category": "Life", "image_url": "https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800"},
-            {"title": "C++ Debugging", "caption": "The black hole is finally rendering.", "category": "Code", "image_url": "https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=800"}
-        ]
-        
-        for p in test_posts:
-            # Explicitly map the fields to avoid the "id" type error
-            db_post = LifePost(
-                title=p["title"],
-                caption=p["caption"],
-                category=p["category"],
-                image_url=p["image_url"]
+        about = session.exec(select(About)).first()
+        if not about:
+            session.add(About(**content.ABOUT))
+            print("  about: created")
+        elif refresh:
+            for key, value in content.ABOUT.items():
+                setattr(about, key, value)
+            session.add(about)
+            print("  about: overwritten (--refresh)")
+        else:
+            print("  about: exists, left alone")
+
+        fill_if_empty(session, SkillGroup, content.SKILL_GROUPS, "skills")
+        fill_if_empty(session, Experience, content.EXPERIENCE, "experience")
+        fill_if_empty(session, Education, content.EDUCATION, "education")
+
+        existing = {repo_name(p.github_url): p for p in session.exec(select(Project)).all()}
+        for position, data in enumerate(content.PROJECTS):
+            fields = {k: v for k, v in data.items() if k not in ("repo", "aliases")}
+            match = next(
+                (existing[name] for name in [data["repo"], *data["aliases"]] if name in existing),
+                None,
             )
-            session.add(db_post)
+            if match is None:
+                session.add(Project(**fields, sort_order=position))
+                print(f"  project '{data['title']}': added")
+            elif refresh:
+                for key, value in fields.items():
+                    setattr(match, key, value)
+                match.sort_order = position
+                session.add(match)
+                print(f"  project '{data['title']}': overwritten (--refresh)")
+            else:
+                print(f"  project '{data['title']}': exists, left alone")
 
-        session.commit() 
-        print("Migration complete! Data has been synced to the database.")
+        session.commit()
+    print("Done.")
+
 
 if __name__ == "__main__":
-    migrate_data()
+    seed(refresh="--refresh" in sys.argv)
