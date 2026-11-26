@@ -1,15 +1,5 @@
 import { GitGraph } from "lucide-react";
-
-interface Project {
-  id: number;
-  title: string;
-  description?: string;
-  tech_stack: string[];
-  github_url?: string;
-  featured: boolean;
-  category?: string;
-  difficulty: number;
-}
+import type { Project } from "../types";
 
 function ProjectCard({
   title,
@@ -18,25 +8,17 @@ function ProjectCard({
   github_url,
   category,
   difficulty,
-  featured,
 }: Project) {
   return (
     <div
       className={`relative p-8 border-2 border-slate-500/30 bg-slate-800/40 rounded-2xl transition-all
      hover:border-cyan-500/50 hover:bg-slate-800/60 group`}
     >
-      {featured && (
-        <span
-          className="absolute -top-3 -right-3 bg-cyan-600 text-white text-[10px] font-bold 
-                px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-cyan-900/20"
-        ></span>
-      )}
-
       <div className="mb-4">
         <span className="flex justify-center text-cyan-500 font-mono font-bold text-xs uppercase tracking-widest">
           {category || "General Project"}
         </span>
-        <h3 className="text-2xl font-bold text-slate-100 group-hover:text-cyan-400 transition-color">
+        <h3 className="text-2xl font-bold text-slate-100 group-hover:text-cyan-400 transition-colors">
           {title}
         </h3>
       </div>
@@ -46,7 +28,7 @@ function ProjectCard({
       </p>
 
       <div className="flex flex-wrap gap-2 mb-8">
-        {tech_stack.map((tech) => (
+        {(tech_stack ?? []).map((tech) => (
           <span
             key={tech}
             className="px-2 py-1 text-[11px] font-mono bg-slate-900/50 text-slate-300 border border-slate-700 rounded-md"

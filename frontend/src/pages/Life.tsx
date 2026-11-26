@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, X } from "lucide-react";
 import type { LifePost } from "../types";
+import { API_URL, authFetch, isLoggedIn as checkLoggedIn } from "../auth";
 
 export default function Life() {
   const [posts, setPosts] = useState<LifePost[]>([]);
@@ -11,13 +12,15 @@ export default function Life() {
     category: "General",
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const isLoggedIn = !!localStorage.getItem("token");
-  const API_URL = import.meta.env.VITE_API_URL;
+  const [uploadError, setUploadError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const isLoggedIn = checkLoggedIn();
 
   const handleAddPost = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedFile) return alert("Please select an image");
-    const token = localStorage.getItem("token");
+    if (!selectedFile) return setUploadError("Please select an image");
+    setUploadError("");
+    setUploading(true);
 
     const formData = new FormData();
     formData.append("title", newPost.title);
@@ -26,11 +29,8 @@ export default function Life() {
     formData.append("image", selectedFile);
 
     try {
-      const res = await fetch(`${API_URL}/api/life`, {
+      const res = await authFetch("/api/life", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: formData,
       });
 
@@ -40,16 +40,23 @@ export default function Life() {
         setShowForm(false);
         setNewPost({ title: "", caption: "", category: "General" });
         setSelectedFile(null);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setUploadError(typeof body.detail === "string" ? body.detail : "Upload failed");
       }
     } catch (err) {
       console.error("Upload failed", err);
+      setUploadError("Could not reach the server");
+    } finally {
+      setUploading(false);
     }
   };
 
   useEffect(() => {
     fetch(`${API_URL}/api/life`)
       .then((res) => res.json())
-      .then((data) => setPosts(data));
+      .then((data) => setPosts(Array.isArray(data) ? data : []))
+      .catch((err) => console.error("Could not load posts", err));
   }, []);
 
   return (
@@ -125,12 +132,16 @@ export default function Life() {
                 }
                 required
               />
+              {uploadError && (
+                <p className="text-red-400 text-sm">{uploadError}</p>
+              )}
               <button
                 type="submit"
+                disabled={uploading}
                 className="w-full py-4 bg-cyan-600
-                  text-white font-bold rounded-xl hover:bg-cyan-500 transition-all"
+                  text-white font-bold rounded-xl hover:bg-cyan-500 transition-all disabled:opacity-50"
               >
-                Upload to Life
+                {uploading ? "Uploading..." : "Upload to Life"}
               </button>
             </form>
           </div>

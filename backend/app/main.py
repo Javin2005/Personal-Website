@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from base64 import b64encode
@@ -8,14 +8,17 @@ from sqlmodel import Session, select, desc
 from typing import List
 
 import html
+import re
+import time
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from .auth import verify_password, create_access_token, get_password_hash, get_current_user
+from .auth import verify_password, create_access_token, get_current_user
 
 from .database import create_db_and_tables, get_session
 from .models import Project, About, CreativeItem, ContactForm, User, LifePost
+from .schemas import AboutUpdate, ProjectCreate, ProjectUpdate
 
 import cloudinary
 import cloudinary.uploader
@@ -24,7 +27,6 @@ import cloudinary.uploader
 import os
 import resend
 import httpx
-import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,7 +47,21 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-limiter = Limiter(key_func=get_remote_address)
+def client_ip(request: Request) -> str:
+    """The visitor's IP address, used as the rate-limit key.
+
+    On Render the app sits behind a proxy, so request.client.host is the
+    proxy's IP and every visitor would share ONE rate-limit bucket. The proxy
+    appends the real client IP to X-Forwarded-For; we take the last entry
+    (the one our proxy added) because earlier entries can be faked by the client.
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[-1].strip()
+    return get_remote_address(request)
+
+
+limiter = Limiter(key_func=client_ip)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -63,8 +79,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 async def read_root():
@@ -85,14 +99,15 @@ def get_featured_projects(session: Session = Depends(get_session)):
 
 
 @app.post("/api/projects", response_model=Project)
-def create_project(project: Project, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
+def create_project(data: ProjectCreate, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
+    project = Project(**data.model_dump())
     session.add(project)
     session.commit()
     session.refresh(project)
     return project
 
 @app.put("/api/projects/{project_id}", response_model=Project)
-def update_project(project_id: int, updated_project: Project, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
+def update_project(project_id: int, updated_project: ProjectUpdate, session: Session = Depends(get_session), admin: str = Depends(get_current_user)):
     db_project = session.get(Project, project_id)
     if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -125,7 +140,7 @@ def get_about(session: Session = Depends(get_session)):
 
 @app.put("/api/about", response_model=About)
 def update_about(
-    updated_about: About, 
+    updated_about: AboutUpdate,
     session: Session = Depends(get_session), 
     admin: str = Depends(get_current_user)
 ):
@@ -135,7 +150,7 @@ def update_about(
     
 
 
-    about_data = updated_about.model_dump(exclude={"id"})
+    about_data = updated_about.model_dump()
     
 
     for key, value in about_data.items():
@@ -157,6 +172,7 @@ async def handle_contact(request: Request, form_data: ContactForm):
         email = resend.Emails.send({
             "from": "onboarding@resend.dev",
             "to": "christiancarlsonwork@gmail.com",
+            "reply_to": form_data.email,
             "subject": f"New Message from {form_data.name.replace(chr(10), ' ')}",
             "html": f"""
                 <h3>New Portfolio Message</h3>
@@ -183,36 +199,60 @@ def get_life_posts(session: Session = Depends(get_session)):
     return session.exec(statement).all()
 
 
-@app.post("/api/life")
+MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
+
+
+def cloudinary_public_id(url: str):
+    """Recover Cloudinary's id for an image from its URL so it can be deleted.
+
+    e.g. https://res.cloudinary.com/<cloud>/image/upload/v1712/abc123.jpg -> "abc123"
+    Returns None for images not hosted on Cloudinary (like the seeded Unsplash ones).
+    """
+    marker = "/image/upload/"
+    if "res.cloudinary.com" not in url or marker not in url:
+        return None
+    parts = url.split(marker, 1)[1].split("/")
+    if parts and re.fullmatch(r"v\d+", parts[0]):
+        parts = parts[1:]
+    return "/".join(parts).rsplit(".", 1)[0] or None
+
+
+@app.post("/api/life", response_model=LifePost)
 async def create_life_post(
-    title: str = Form(...),
-    caption: str = Form(...),
-    category: str = Form(...),
+    title: str = Form(..., min_length=1, max_length=200),
+    caption: str = Form(..., max_length=2000),
+    category: str = Form(..., max_length=50),
     image: UploadFile = File(...),
     session: Session = Depends(get_session),
     current_user: str = Depends(get_current_user)
 ):
+    if not (image.content_type or "").startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    contents = await image.read(MAX_IMAGE_BYTES + 1)
+    if len(contents) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="Image is larger than 10 MB")
+
     try:
-
-        upload_result = cloudinary.uploader.upload(image.file)
-        
-
-        db_url = upload_result.get("secure_url")
-
-
-        new_post = LifePost(
-            title=title,
-            caption=caption,
-            category=category,
-            image_url=db_url 
+        # The Cloudinary SDK is blocking; run it in a thread so the server
+        # can keep answering other requests while the upload happens.
+        upload_result = await run_in_threadpool(
+            cloudinary.uploader.upload, contents, resource_type="image"
         )
-
-        session.add(new_post)
-        session.commit()
-        session.refresh(new_post)
-        return new_post
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
+        print(f"Cloudinary upload failed: {e}")
+        raise HTTPException(status_code=502, detail="Image upload failed")
+
+    new_post = LifePost(
+        title=title,
+        caption=caption,
+        category=category,
+        image_url=upload_result["secure_url"],
+    )
+    session.add(new_post)
+    session.commit()
+    session.refresh(new_post)
+    return new_post
 
 
 @app.delete("/api/life/{post_id}")
@@ -220,10 +260,18 @@ def delete_life_post(post_id: int, session: Session = Depends(get_session), admi
     db_post = session.get(LifePost, post_id)
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
-    
+
+    # Also remove the file from Cloudinary, otherwise it keeps using your free quota.
+    public_id = cloudinary_public_id(db_post.image_url)
+    if public_id:
+        try:
+            cloudinary.uploader.destroy(public_id)
+        except Exception as e:
+            print(f"Cloudinary delete failed for {public_id}: {e}")
+
     session.delete(db_post)
     session.commit()
-    return{"status": "Post deleted"}
+    return {"status": "Post deleted"}
 
 
 @app.post("/api/token")
@@ -239,8 +287,33 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+# Every visitor's status bar asks for GitHub/Spotify status every 30 seconds.
+# Without a cache, 10 visitors = 40+ GitHub API calls per minute, which hits
+# GitHub's rate limit fast. We remember the last answer for a short while instead.
+_status_cache: dict = {}
+
+
+def cached(key: str, max_age: float):
+    hit = _status_cache.get(key)
+    if hit and time.monotonic() - hit[0] < max_age:
+        return hit[1]
+    return None
+
+
+def remember(key: str, value: dict) -> dict:
+    _status_cache[key] = (time.monotonic(), value)
+    return value
+
+
 @app.get("/api/status/github")
 async def get_github_status():
+    hit = cached("github", 300)
+    if hit is not None:
+        return hit
+    return remember("github", await _fetch_github_status())
+
+
+async def _fetch_github_status():
     username = "Javin2005"
     token = os.getenv("GITHUB_TOKEN")
     headers = {
@@ -325,6 +398,13 @@ async def get_github_status():
 
 @app.get("/api/status/spotify")
 async def get_spotify_status():
+    hit = cached("spotify", 25)
+    if hit is not None:
+        return hit
+    return remember("spotify", await _fetch_spotify_status())
+
+
+async def _fetch_spotify_status():
     client_id = os.getenv("SPOTIFY_CLIENT_ID")
     client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
     refresh_token = os.getenv("SPOTIFY_REFRESH_TOKEN")
@@ -333,7 +413,7 @@ async def get_spotify_status():
     if not all([client_id, client_secret, refresh_token]):
         return {"active": False}
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             auth_str = f"{client_id}:{client_secret}"
             b64_auth = b64encode(auth_str.encode()).decode()
@@ -351,6 +431,9 @@ async def get_spotify_status():
             token_res = await client.post(token_url, data=token_data, 
                                           headers=token_headers)
             access_token = token_res.json().get("access_token")
+            if not access_token:
+                print(f"Spotify token refresh failed: {token_res.status_code}")
+                return {"active": False}
 
             playback_url = "https://api.spotify.com/v1/me/player/currently-playing"
             headers = {"Authorization": f"Bearer {access_token}"}
@@ -360,8 +443,12 @@ async def get_spotify_status():
             if resp.status_code == 204:
                 return {"active": False, "message": "Nothing playing"}
             
+            if resp.status_code != 200:
+                return {"active": False}
+
             data = resp.json()
-            if data.get("is_playing"):
+            # "item" is null for ads and some podcasts
+            if data.get("is_playing") and data.get("item"):
                 return {
                     "active": True,
                     "track": data["item"] ["name"],

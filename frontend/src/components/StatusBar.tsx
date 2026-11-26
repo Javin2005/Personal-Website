@@ -1,26 +1,48 @@
 import { useState, useEffect } from "react";
 import { GitBranch, Music } from "lucide-react";
+import { API_URL } from "../auth";
+
+interface GithubStatus {
+  active: boolean;
+  repo?: string;
+  message?: string;
+}
+
+interface SpotifyStatus {
+  active: boolean;
+  track?: string;
+  artist?: string;
+  link?: string;
+}
 
 export default function StatusBar() {
-  const [github, setGithub] = useState<any>(null);
-  const [spotify, setSpotify] = useState<any>(null);
-  const API_URL = import.meta.env.VITE_API_URL;
+  const [github, setGithub] = useState<GithubStatus | null>(null);
+  const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
 
   useEffect(() => {
     const fetchData = () => {
+      // Don't poll while the tab is in the background
+      if (document.hidden) return;
+
       fetch(`${API_URL}/api/status/github`)
         .then((res) => res.json())
-        .then((data) => data.active && setGithub(data));
+        .then((data: GithubStatus) => data.active && setGithub(data))
+        .catch(() => {});
 
       fetch(`${API_URL}/api/status/spotify`)
         .then((res) => res.json())
-        .then((data) => setSpotify(data.active ? data : null));
+        .then((data: SpotifyStatus) => setSpotify(data.active ? data : null))
+        .catch(() => setSpotify(null));
     };
 
     fetchData();
 
     const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
+    document.addEventListener("visibilitychange", fetchData);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", fetchData);
+    };
   }, []);
 
   return (

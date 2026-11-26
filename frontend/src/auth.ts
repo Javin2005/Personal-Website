@@ -6,7 +6,7 @@ export function getToken(): string | null {
 
 function tokenExpired(token: string): boolean {
     try{
-        const part = token.split(".")[1].replace(/-/g, "+").replace(/-/g, "/");
+        const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
         const payload= JSON.parse(atob(part));
         return payload.exp * 1000 < Date.now();
     } catch{

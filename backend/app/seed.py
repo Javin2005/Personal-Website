@@ -1,6 +1,6 @@
 import os
 import json
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session, SQLModel, select
 from .database import engine 
 from .models import Project, About, CreativeItem, User, LifePost
 from .auth import get_password_hash
@@ -21,6 +21,10 @@ def migrate_data():
         data = json.load(file)
 
     with Session(engine) as session:
+        if session.exec(select(About)).first():
+            print("Database already has content; skipping seed so nothing gets duplicated.")
+            return
+
         print("Migrating About section...")
         about_data = data["about"]
         db_about = About(

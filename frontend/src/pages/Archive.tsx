@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { Search, ArrowLeft } from "lucide-react";
 import { NavHashLink } from "react-router-hash-link";
+import { API_URL } from "../auth";
 import type { Project } from "../types";
 import ProjectCard from "../components/ProjectCard";
 
 function Archive() {
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     fetch(`${API_URL}/api/projects`)
@@ -19,7 +19,7 @@ function Archive() {
   const filteredProjects = allProjects.filter(
     (p) =>
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.tech_stack.some((tech) =>
+      (p.tech_stack ?? []).some((tech) =>
         tech.toLowerCase().includes(searchQuery.toLowerCase()),
       ),
   );

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_URL } from "../auth";
 import { Send, Mail, User, MessageSquare } from "lucide-react";
 
 function Contact() {
@@ -8,11 +9,10 @@ function Contact() {
     message: "",
   });
   const [status, setStatus] = useState("");
-  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus("sending...");
+    setStatus("sending");
 
     try {
       const response = await fetch(`${API_URL}/api/contact`, {
@@ -24,8 +24,12 @@ function Contact() {
       if (response.ok) {
         setStatus("success");
         setFormData({ name: "", email: "", message: "" });
+      } else if (response.status === 429) {
+        setStatus("rate-limited");
+      } else {
+        setStatus("error");
       }
-    } catch (err) {
+    } catch {
       setStatus("error");
     }
   };
@@ -110,7 +114,12 @@ function Contact() {
 
         {status === "error" && (
           <p className="text-red-400 text-sm text-center">
-            Connection failed. Please try again.
+            Something went wrong. Please try again.
+          </p>
+        )}
+        {status === "rate-limited" && (
+          <p className="text-red-400 text-sm text-center">
+            Too many messages. Please wait a minute and try again.
           </p>
         )}
       </form>

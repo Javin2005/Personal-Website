@@ -2,15 +2,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import { ShieldCheck, LogOut } from "lucide-react";
 import logo from "../assets/cjc.svg";
+import { isLoggedIn as checkLoggedIn, logout } from "../auth";
 
 function Navbar() {
   const navigate = useNavigate();
-  const isLoggedIn = !!localStorage.getItem("token");
+  const isLoggedIn = checkLoggedIn();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    logout();
     navigate("/");
-    window.location.reload();
   };
 
   return (

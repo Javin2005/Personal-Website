@@ -16,6 +16,18 @@ function Admin() {
 
   const navigate = useNavigate();
 
+  // FastAPI sends errors as {detail: "..."} or, for validation errors,
+  // {detail: [{loc: [...], msg: "..."}]}. Turn either into readable text.
+  const errorText = async (res: Response) => {
+    const body = await res.json().catch(() => null);
+    if (typeof body?.detail === "string") return body.detail;
+    if (Array.isArray(body?.detail))
+      return body.detail
+        .map((d: { loc: string[]; msg: string }) => `${d.loc.at(-1)}: ${d.msg}`)
+        .join(", ");
+    return `Request failed (${res.status})`;
+  };
+
 
   const handleUpdateAbout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +37,7 @@ function Admin() {
       headers: { "Content-Type": "application/json"},
       body: JSON.stringify(about),
     });
-    if (res.ok) setStatus("Profile saved!");
+    setStatus(res.ok ? "Profile saved!" : `Error: ${await errorText(res)}`);
   };
 
   const handleDeleteProject = async (id: number) => {
@@ -34,6 +46,7 @@ function Admin() {
       method: "DELETE"
     });
     if (res.ok) setProjects(projects.filter((p) => p.id !== id));
+    else alert(`Delete failed: ${await errorText(res)}`);
   };
 
   const handleDeleteLife = async (id: number) => {
@@ -45,6 +58,8 @@ function Admin() {
       });
       if (res.ok) {
         setLifePosts(lifePosts.filter((p) => p.id !== id));
+      } else {
+        alert(`Delete failed: ${await errorText(res)}`);
       }
     } catch (err) {
       console.error("Delete error:", err);
@@ -57,20 +72,23 @@ function Admin() {
       return;
     }
     fetch(`${API_URL}/api/about`)
-      .then((res) => res.json())
-      .then(setAbout);
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then(setAbout)
+      .catch(() => setStatus("Could not load profile from the server"));
     fetch(`${API_URL}/api/projects`)
       .then((res) => res.json())
-      .then(setProjects);
+      .then(setProjects)
+      .catch(() => {});
     fetch(`${API_URL}/api/life`)
       .then((res) => res.json())
-      .then(setLifePosts);
+      .then(setLifePosts)
+      .catch(() => {});
   }, [navigate]);
 
   if (!about)
     return (
       <div className="pt-32 text-center text-cyan-500 font-mono">
-        Initializing...
+        {status || "Initializing..."}
       </div>
     );
 
@@ -191,29 +209,40 @@ function Admin() {
             <h2 className="text-white font-bold mb-4">Add Project</h2>
             <form
               className="space-y-4"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                const form = e.target as any;
+                const form = new FormData(e.currentTarget);
+                const text = (key: string) => String(form.get(key) ?? "").trim();
                 const newP = {
-                  title: form.title.value,
-                  description: form.desc.value,
-                  category: form.cat.value,
-                  difficulty: parseInt(form.diff.value),
-                  tech_stack: form.tech.value.split(","),
-                  featured: true,
+                  title: text("title"),
+                  description: text("desc"),
+                  category: text("cat") || "General",
+                  difficulty: Number(text("diff")) || 1,
+                  tech_stack: text("tech")
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean),
+                  github_url: text("github") || null,
+                  featured: form.get("featured") === "on",
                 };
-                authFetch("/api/projects", {
+                const res = await authFetch("/api/projects", {
                   method: "POST",
-                  headers: { "content-Type": "application/json" },
+                  headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(newP),
-                }).then(() => {
-                  setShowProjForm(false);
-                  window.location.reload();
                 });
+                if (res.ok) {
+                  const created: Project = await res.json();
+                  setProjects([...projects, created]);
+                  setShowProjForm(false);
+                  setStatus("");
+                } else {
+                  setStatus(`Error: ${await errorText(res)}`);
+                }
               }}
             >
               <input
                 name="title"
+                required
                 placeholder="Title"
                 className="w-full bg-slate-950 p-3 rounded-lg text-white"
               />
@@ -230,14 +259,29 @@ function Admin() {
               <input
                 name="diff"
                 type="number"
-                placeholder="Difficulty"
+                min={1}
+                max={5}
+                defaultValue={3}
+                placeholder="Difficulty (1-5)"
                 className="w-full bg-slate-950 p-3 rounded-lg text-white"
               />
               <input
                 name="tech"
-                placeholder="Tech (React,Python)"
+                placeholder="Tech (React, Python)"
                 className="w-full bg-slate-950 p-3 rounded-lg text-white"
               />
+              <input
+                name="github"
+                type="url"
+                placeholder="GitHub URL (optional)"
+                className="w-full bg-slate-950 p-3 rounded-lg text-white"
+              />
+              <label className="flex items-center gap-2 text-slate-300 text-sm">
+                <input name="featured" type="checkbox" /> Show on homepage
+              </label>
+              {status.startsWith("Error") && (
+                <p className="text-red-400 text-xs">{status}</p>
+              )}
               <div className="flex gap-4">
                 <button
                   type="submit"

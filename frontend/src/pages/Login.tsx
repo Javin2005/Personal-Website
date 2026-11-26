@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_URL } from "../auth";
 import { useNavigate } from "react-router-dom";
 import { Terminal } from "lucide-react";
 
@@ -7,7 +8,6 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,7 +30,7 @@ function Login() {
       } else {
         setError("ACCESS DENIED: INVALID CREDENTIALS");
       }
-    } catch (err) {
+    } catch {
       setError("SYSTEM ERROR: UNABLE TO REACH HOST");
     }
   };

@@ -3,13 +3,13 @@ import ProjectCard from "../components/ProjectCard";
 import AboutSection from "../components/AboutSection";
 import CreativeCard from "../components/CreativeCard";
 import Contact from "../components/Contact";
+import { API_URL } from "../auth";
 import type { Project, About, CreativeItem } from "../types";
 
 function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [about, setAbout] = useState<About | null>(null);
   const [creative, setCreative] = useState<CreativeItem[]>([]);
-  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     fetch(`${API_URL}/api/projects/featured`)
