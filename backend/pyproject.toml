@@ -34,3 +34,8 @@ build-backend = "poetry.core.masonry.api"
 # Poetry that doesn't understand the newer [dependency-groups] section.
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8,<9"
+
+[tool.poetry]
+name = "backend"
+version = "0.1.0"
+package-mode = false
